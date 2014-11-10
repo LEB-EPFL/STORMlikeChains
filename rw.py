@@ -98,22 +98,27 @@ class WormlikeChain(Path):
         The wormlike chain is created by first choosing the sizes of
         the small, random displacements in a plane tangent to a point
         on the surface of the unit sphere defined by the vector
-        currPoint.
+        currPoint. The distribution for the sizes is given by the
+        Boltzmann statistics for a semiflexible rod bending by given
+        angle due to interaction with its thermal environment.
 
         A random direction in this tangent plane is chosen by randomly
         and uniformly generating a vector on the unit sphere, taking
         its cross product with the currPoint vector, and normalizing
         the cross product. This cross product is multiplied by the
-        size of the displacement to generate the displacement vector.
+        size of the displacement found previously to generate the
+        displacement vector.
 
         After displacing the currPoint vector into the tangent plane,
         the point in the plane is back projected onto the unit sphere
         to find the vector representing the next step in the polymer
-        walk. This process is repeated until a number of vectors equal
-        to numSegments representing a random walk on the surface of a
-        sphere are generated. These vectors are cumulatively summed to
-        produce the final path variable, which is the trajectory of
-        the polymer.
+        walk.
+
+        This process is repeated until a number of vectors equal to
+        numSegments representing a random walk on the surface of a
+        sphere are generated. These vectors are cumulatively summed at
+        the end to produce the final path field, which is the
+        trajectory of the polymer.
 
         Parameters
         ----------
@@ -132,8 +137,14 @@ class WormlikeChain(Path):
         for ctr in range(self.numSegments - 1):
             # Create a displacement in the plane tangent to currPoint
             dispVector = cross(currPoint, randVecs[:,ctr])
+
+            # Check if displacement and currPoint vectors are parallel
+            while norm(dispVector) == 0:
+                newRandVec = self._randPointSphere(1)
+                dispVector = cross(currPoint, newRandVec)
+                
             dispVector = self._normVector(dispVector) \
-              * tanPlaneDisp[ctr]
+                    * tanPlaneDisp[ctr]
             
             # Back project new point onto sphere
             projDistance = 1 - cos(angDisp[ctr])
@@ -200,7 +211,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
 
-    myChain = WormlikeChain(50, 25)
+    myChain = WormlikeChain(1000, 25)
     path = myChain.path
     
     fig = plt.figure()
