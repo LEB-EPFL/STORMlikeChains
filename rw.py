@@ -1,4 +1,4 @@
-"""Classes for simulating random walks in two or three dimensions.
+"""Classes for simulating random walks in three dimensions.
 
 """
 
@@ -7,7 +7,8 @@ __version__ = '0.1'
 __email__ = 'kyle.m.douglass@gmail.com'
 
 from math import modf
-from numpy import pi, cos, sin, arccos
+from textwrap import dedent
+from numpy import pi, cos, sin, arccos, meshgrid
 from numpy import array, cross, concatenate, hstack, vstack, cumsum
 from numpy.random import randn, random
 from numpy.linalg import norm
@@ -70,8 +71,6 @@ class Path():
         points = array([x, y, z])
 
         return points
-    
-#    def _savePath():
 
 class WormlikeChain(Path):
     """Creates a 3D wormlike chain.
@@ -96,9 +95,9 @@ class WormlikeChain(Path):
                  numSegments,
                  pLength,
                  initPoint = array([1, 0, 0])):
+
         self.numSegments = numSegments
         self.pLength = pLength
-
         self.path = initPoint
         self._makePath()
 
@@ -136,7 +135,14 @@ class WormlikeChain(Path):
             Initial point to start polymer from on the unit sphere.
 
         """
-        numSegFrac, numSegInt = modf(numSegments)
+        if self.numSegments < 1:
+            errorStr = dedent('''
+                The number of segments must be greater than 1, but a
+                value of %r was supplied.''' % self.numSegments)
+           
+            raise ValueError(errorStr)
+        
+        numSegFrac, numSegInt = modf(self.numSegments)
         numSegInt = int(numSegInt)
         
         # Create the displacement distances in the tangent planes
@@ -184,7 +190,7 @@ class WormlikeChain(Path):
         # Add up the vectors in path to create the polymer
         self.path = cumsum(self.path, axis = 0)
 
-    def _makeNewPath(self, initPoint = array([1, 0, 0])):
+    def makeNewPath(self, initPoint = array([1, 0, 0])):
         """Clears current path and makes a new one.
 
         Parameters
@@ -208,6 +214,9 @@ class Collector():
     ----------
     numPaths : int
         The number of paths to collect before stopping the simulation.
+    segConvFactor : float
+        The conversion factor between path parameters and path
+        segments.
 
     Attributes
     ----------
@@ -215,17 +224,85 @@ class Collector():
         The path for generating walks.
     """
 
-    def __init__(self, numPaths):
+    def __init__(self, numPaths, pathLength, segConvFactor = 1):
+        if numPaths != len(pathLength):
+            errorStr = dedent('''
+                Number of paths input: %r
+                Length of path lengths vector: %r
+
+                These values must be equal and integers.'''
+                % (numPaths, len(pathLength)))
+            
+            raise SizeException(errorStr)
+        
         self.numPaths = numPaths
+        self._segConvFactor = segConvFactor
+
+        self.__pathLength = self._convSegments(pathLength, True)
+
+    def _convSegments(self, pathParam, multiplyBool):
+        """Convert path parameters into segments.
+
+        Parameters
+        ----------
+        pathParam : array of float
+            The parameters to convert into segments
+        multiplyBool : bool
+            Multiply or divide by the conversion factor
+
+        Returns
+        -------
+        paramInSegments : array of float
+            The parameters in units of path segments.
+
+        """
+        if multiplyBool:
+            paramInSegments = pathParam * self._segConvFactor
+        else:
+            paramInSegments = pathParam / self._segConvFactor
+            
+        return paramInSegments
 
 class WLCCollector(Collector):
     """Collector for the wormlike chain.
 
     """
-    def __init__(self, numPaths, linDensity, pLength, segConv):
-        super().__init__(numPaths)
-        
-        
+    def __init__(self,
+                 numPaths,
+                 pathLength,
+                 linDensity,
+                 persisLength,
+                 segConvFactor = 1):
+        super().__init__(numPaths, pathLength, segConvFactor)
+        self._linDensity = self._convSegments(linDensity, False)
+        self._persisLength = self._convSegments(persisLength, True)
+        self.__pathLength = pathLength
+
+        self._startCollector()
+
+    def _startCollector(self):
+        """Begin collecting wormlike chain conformation statistics.
+
+        """
+        linDensity, persisLength = meshgrid(self._linDensity,
+                                            self._persisLength)
+        # Loop over all combinations of density and persistence length
+        for c, lp in zip(linDensity.flatten(),
+                         persisLength.flatten()):
+            print('Density: %r, Persistence length: %r'
+                  %(c, lp))
+
+            numSegments = self.__pathLength / c
+            print('Number of segments: %r' % numSegments)
+            
+            # Does the collector already have a path object?
+            if not hasattr(self, 'myPath'):
+                self._myPath = WormlikeChain(numSegments[0], lp)
+            
+            for ctr in range(self.numPaths):
+                self._myPath.numSegments = numSegments[ctr]
+                self._myPath.pLength = lp
+                self._myPath.makeNewPath()
 
 class SizeException(Exception):
     pass
@@ -261,7 +338,7 @@ if __name__ == '__main__':
     """
         
     # Test case 3: Create a single random walk
-    import matplotlib.pyplot as plt
+    """import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
 
     numSegments, pLength = 1000.1, 25
@@ -271,5 +348,13 @@ if __name__ == '__main__':
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.plot(path[:,0], path[:,1], path[:,2])
-    plt.show()
-    
+    plt.show()"""
+
+    # Test case 4: Create wormlike chain collector.
+    numPaths = 5 # Number of paths per pair of walk parameters
+    pathLength = (2000) **(0.5) * randn(numPaths) + 25000 # bp in walk
+    linDensity = array([40, 50]) # bp / nm
+    persisLength = array([15, 20, 25]) # nm
+    segConvFactor = 10 / min(persisLength) # segments / min persisLen
+
+    myCollector = WLCCollector(numPaths, pathLength, linDensity, persisLength, segConvFactor)
