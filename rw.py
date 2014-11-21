@@ -6,14 +6,13 @@ __author__ = 'Kyle M. Douglass'
 __version__ = '0.1'
 __email__ = 'kyle.m.douglass@gmail.com'
 
-from numpy import pi, cos, sin, arccos, array, cross, vstack, cumsum
+from math import modf
+from numpy import pi, cos, sin, arccos
+from numpy import array, cross, concatenate, hstack, vstack, cumsum
 from numpy.random import randn, random
 from numpy.linalg import norm
 
 class Path():
-    def __init__(self):
-        print('hello')
-
     def _normVector(self, vectors):
         """Normalize an array of vectors.
 
@@ -75,21 +74,32 @@ class Path():
 #    def _savePath():
 
 class WormlikeChain(Path):
-    def __init__(self, numSegments, pLength):
-        """Initiates the creation of wormlike chains.
+    """Creates a 3D wormlike chain.
 
-        Parameters
-        ----------
-        numSegments : int
-            The number of segments in the chain.
-        pLength : int
-            The persistence length in units of chain segments.
+    Parameters
+    ----------
+    numSegments : float
+        The number of segments in the chain. Must be >= 1 and need not
+        be an integer.
+    pLength : int
+        The persistence length in units of chain segments.
+    initPoint : array of float, optional
+        The coordiantes of the first point of the chain.
 
+    Attributes
+    ----------
+    path : array of float
+        2D array of floats describing x,y points in the path.
+        
         """
+    def __init__(self,
+                 numSegments,
+                 pLength,
+                 initPoint = array([1, 0, 0])):
         self.numSegments = numSegments
         self.pLength = pLength
 
-        self.path = array([1, 0, 0])
+        self.path = initPoint
         self._makePath()
 
     def _makePath(self, initPoint = array([1, 0, 0])):
@@ -99,7 +109,7 @@ class WormlikeChain(Path):
         the small, random displacements in a plane tangent to a point
         on the surface of the unit sphere defined by the vector
         currPoint. The distribution for the sizes is given by the
-        Boltzmann statistics for a semiflexible rod bending by given
+        Boltzmann statistics for a semiflexible rod bending by a given
         angle due to interaction with its thermal environment.
 
         A random direction in this tangent plane is chosen by randomly
@@ -114,8 +124,8 @@ class WormlikeChain(Path):
         to find the vector representing the next step in the polymer
         walk.
 
-        This process is repeated until a number of vectors equal to
-        numSegments representing a random walk on the surface of a
+        This process is repeated until a number of vectors determined
+        by numSegments representing a random walk on the surface of a
         sphere are generated. These vectors are cumulatively summed at
         the end to produce the final path field, which is the
         trajectory of the polymer.
@@ -126,15 +136,31 @@ class WormlikeChain(Path):
             Initial point to start polymer from on the unit sphere.
 
         """
+        numSegFrac, numSegInt = modf(numSegments)
+        numSegInt = int(numSegInt)
+        
         # Create the displacement distances in the tangent planes
         angDisp = self.pLength ** (-0.5) * randn(self.numSegments - 1)
         tanPlaneDisp = sin(angDisp)
 
         # Create random vectors uniformly sampled from the unit sphere
-        randVecs = self._randPointSphere(self.numSegments - 1)
+        randVecs = self._randPointSphere(numSegInt - 1)
+        
+        # Final small displacement for non-integer numSegments
+        if numSegFrac != 0.0:
+            angDispFinal = (self.pLength * numSegFrac) ** (-0.5) \
+                           * randn(1)
+            tanPlaneDispFinal = numSegFrac * sin(angDispFinal)
+            randVecFinal = numSegFrac * self._randPointSphere(1)
+
+            # Append final direction vector and displacements
+            angDisp = concatenate((angDisp, angDispFinal))
+            tanPlaneDisp = concatenate((tanPlaneDisp,
+                                        tanPlaneDispFinal))
+            randVecs = hstack((randVecs, randVecFinal))
 
         currPoint = initPoint
-        for ctr in range(self.numSegments - 1):
+        for ctr in range(len(tanPlaneDisp)):
             # Create a displacement in the plane tangent to currPoint
             dispVector = cross(currPoint, randVecs[:,ctr])
 
@@ -142,7 +168,8 @@ class WormlikeChain(Path):
             while norm(dispVector) == 0:
                 newRandVec = self._randPointSphere(1)
                 dispVector = cross(currPoint, newRandVec)
-                
+
+            # Move the currPoint vector in the tangent plane
             dispVector = self._normVector(dispVector) \
                     * tanPlaneDisp[ctr]
             
@@ -157,6 +184,18 @@ class WormlikeChain(Path):
         # Add up the vectors in path to create the polymer
         self.path = cumsum(self.path, axis = 0)
 
+    def _makeNewPath(self, initPoint = array([1, 0, 0])):
+        """Clears current path and makes a new one.
+
+        Parameters
+        ----------
+        initPoint : array of float
+            Coordinates of the first point.
+
+        """
+        self.path = initPoint
+        self._makePath()
+
 class Analyzer():
     """Analyzes paths for filtering and computing statistics.
 
@@ -165,14 +204,28 @@ class Analyzer():
 class Collector():
     """Counts the number of paths and checks for stop conditions.
 
-    Attributes
+    Parameters
     ----------
     numPaths : int
         The number of paths to collect before stopping the simulation.
 
+    Attributes
+    ----------
+    myPath : path object
+        The path for generating walks.
     """
-    def __init__(self, numPaths, numSaves = 0):
+
+    def __init__(self, numPaths):
         self.numPaths = numPaths
+
+class WLCCollector(Collector):
+    """Collector for the wormlike chain.
+
+    """
+    def __init__(self, numPaths, linDensity, pLength, segConv):
+        super().__init__(numPaths)
+        
+        
 
 class SizeException(Exception):
     pass
@@ -211,7 +264,8 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
 
-    myChain = WormlikeChain(1000, 25)
+    numSegments, pLength = 1000.1, 25
+    myChain = WormlikeChain(numSegments, pLength)
     path = myChain.path
     
     fig = plt.figure()
