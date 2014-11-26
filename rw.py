@@ -88,7 +88,8 @@ class WormlikeChain(Path):
     Attributes
     ----------
     path : array of float
-        2D array of floats describing x,y points in the path.
+        2D array of floats whose columns describe the endpoints of the
+        segments comprising the path.
         
         """
     def __init__(self,
@@ -98,8 +99,7 @@ class WormlikeChain(Path):
 
         self.numSegments = numSegments
         self.pLength = pLength
-        self.path = initPoint
-        self._makePath()
+        self.makeNewPath(initPoint)
 
     def _makePath(self, initPoint = array([1, 0, 0])):
         """Create the wormlike chain.
@@ -206,22 +206,56 @@ class Analyzer():
     """Analyzes paths for filtering and computing statistics.
 
     """
+    def __init__(self):
+        print('hello')
+
+    def computeRg(self, myPath):
+        """Compute the radius of gyration of a path.
+
+        computeRg() calculates the radius of gyration of a Path object
+        and assigns it to a field within the same Path object.
+
+        Parameters
+        ----------
+        myPath : Path or child of Path
+            Path for which the radius of gyration is to be determined
+        """
+        pathShape = myPath.path.shape
+        if pathShape[1] != 2 and pathShape[1] != 3:
+            errorStr = dedent('''
+            Error: Path array has %d columns.
+            A path must have either 2 or 3 columns.
+            For 2D walks, the columns are the x and y coordinates.
+            For 3D walks, the columns are the x, y, and z coordinates.
+            ''' % pathShape[1])
+            
+            raise SizeException(errorStr)
+
+        print('Success!')
 
 class Collector():
-    """Counts the number of paths and checks for stop conditions.
+    """Creates random walk paths and collects their statistics.
+
+    A Collector generates a user-defined number of random walk paths
+    with possibly different lengths by sending the walk parameters to
+    a Path object. After the path has been generated, the statistics
+    that describe the path are collected and binned into a histogram.
 
     Parameters
     ----------
     numPaths : int
-        The number of paths to collect before stopping the simulation.
+        The number of paths to collect before stopping the simulation
+    pathLength : array of float
+        The length of each simulated path
     segConvFactor : float
-        The conversion factor between path parameters and path
-        segments.
+        Conversion factor between the user units and path segments
+        (Default is 1)
 
     Attributes
     ----------
     myPath : path object
         The path for generating walks.
+        
     """
 
     def __init__(self, numPaths, pathLength, segConvFactor = 1):
@@ -237,7 +271,6 @@ class Collector():
         
         self.numPaths = numPaths
         self._segConvFactor = segConvFactor
-
         self.__pathLength = self._convSegments(pathLength, True)
 
     def _convSegments(self, pathParam, multiplyBool):
@@ -253,7 +286,7 @@ class Collector():
         Returns
         -------
         paramInSegments : array of float
-            The parameters in units of path segments.
+            The parameters in units of path segments
 
         """
         if multiplyBool:
@@ -265,6 +298,20 @@ class Collector():
 
 class WLCCollector(Collector):
     """Collector for the wormlike chain.
+
+    Parameters
+    ----------
+    numPaths : int
+        The number of paths to collect before stopping the simulation
+    pathLength : array of float
+        The length of each simulated path in genomic length
+    linDensity : float
+        The number of base pairs per user-defined unit of length
+    persisLength : float
+        The path's persistence length in user-defined units of length
+    segConvFactor : float
+        Conversion factor between the user units and path segments
+        (Default is 1)
 
     """
     def __init__(self,
@@ -351,10 +398,21 @@ if __name__ == '__main__':
     plt.show()"""
 
     # Test case 4: Create wormlike chain collector.
-    numPaths = 5 # Number of paths per pair of walk parameters
+    """numPaths = 5 # Number of paths per pair of walk parameters
     pathLength = (2000) **(0.5) * randn(numPaths) + 25000 # bp in walk
     linDensity = array([40, 50]) # bp / nm
     persisLength = array([15, 20, 25]) # nm
     segConvFactor = 10 / min(persisLength) # segments / min persisLen
 
-    myCollector = WLCCollector(numPaths, pathLength, linDensity, persisLength, segConvFactor)
+    myCollector = WLCCollector(numPaths, pathLength, linDensity, persisLength, segConvFactor)"""
+
+    # Test case 5: Create an analyzer and compute the Rg of a WLC.
+    numSegments, pLength = 1000.1, 25
+    myChain = WormlikeChain(numSegments, pLength)
+
+    myAnalyzer = Analyzer()
+    myAnalyzer.computeRg(myChain)
+
+    # Now test Analyzer's error handling of improperly sized paths.
+    myChain.path = array([[1,2,3,4],[5,6,7,8]])
+    myAnalyzer.computeRg(myChain)
