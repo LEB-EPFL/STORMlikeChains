@@ -8,7 +8,7 @@ __email__ = 'kyle.m.douglass@gmail.com'
 
 from math import modf
 from textwrap import dedent
-from numpy import pi, cos, sin, arccos, meshgrid
+from numpy import pi, cos, sin, arccos, meshgrid, sum, var, zeros
 from numpy import array, cross, concatenate, hstack, vstack, cumsum
 from numpy.random import randn, random
 from numpy.linalg import norm
@@ -71,6 +71,21 @@ class Path():
         points = array([x, y, z])
 
         return points
+
+    def _checkPath(self):
+        """Checks that a path has the correct number of columns.
+
+        """
+        pathShape = self.path.shape
+        if pathShape[1] != 2 and pathShape[1] != 3:
+            errorStr = dedent('''
+            Error: Path array has %d columns.
+            A path must have either 2 or 3 columns.
+            For 2D walks, the columns are the x and y coordinates.
+            For 3D walks, the columns are the x, y, and z coordinates.
+            ''' % pathShape[1])
+            
+            raise SizeException(errorStr)
 
 class WormlikeChain(Path):
     """Creates a 3D wormlike chain.
@@ -190,6 +205,29 @@ class WormlikeChain(Path):
         # Add up the vectors in path to create the polymer
         self.path = cumsum(self.path, axis = 0)
 
+    def computeRg(self):
+        """Compute the radius of gyration of a path.
+
+        computeRg() calculates the radius of gyration of a Path object
+        and assigns it to a field within the same Path object.
+
+        """
+        pathShape = self.path.shape
+        if pathShape[1] != 2 and pathShape[1] != 3:
+            errorStr = dedent('''
+            Error: Path array has %d columns.
+            A path must have either 2 or 3 columns.
+            For 2D walks, the columns are the x and y coordinates.
+            For 3D walks, the columns are the x, y, and z coordinates.
+            ''' % pathShape[1])
+            
+            raise SizeException(errorStr)
+
+        secondMoments = var(self.path, axis = 0)
+        Rg = (sum(secondMoments)) ** (0.5)
+
+        return Rg
+
     def makeNewPath(self, initPoint = array([1, 0, 0])):
         """Clears current path and makes a new one.
 
@@ -202,12 +240,15 @@ class WormlikeChain(Path):
         self.path = initPoint
         self._makePath()
 
+        # Ensure the path field will work with other objects.
+        self._checkPath()
+
 class Analyzer():
     """Analyzes paths for filtering and computing statistics.
 
     """
     def __init__(self):
-        print('hello')
+        print('Hello. I am an analyzer.')
 
     def computeRg(self, myPath):
         """Compute the radius of gyration of a path.
@@ -231,8 +272,11 @@ class Analyzer():
             
             raise SizeException(errorStr)
 
-        print('Success!')
+        secondMoments = var(myPath.path, axis = 0)
+        Rg = (sum(secondMoments)) ** (0.5)
 
+        return Rg
+        
 class Collector():
     """Creates random walk paths and collects their statistics.
 
@@ -309,9 +353,12 @@ class WLCCollector(Collector):
         The number of base pairs per user-defined unit of length
     persisLength : float
         The path's persistence length in user-defined units of length
-    segConvFactor : float
+    segConvFactor : float (optional)
         Conversion factor between the user units and path segments
         (Default is 1)
+    myAnalyzer : Analyzer
+        The analyzer for computing the random walk statistics.
+        (Default analyzer does not filter out any walks.)
 
     """
     def __init__(self,
@@ -319,11 +366,13 @@ class WLCCollector(Collector):
                  pathLength,
                  linDensity,
                  persisLength,
-                 segConvFactor = 1):
+                 segConvFactor = 1,
+                 myAnalyzer = Analyzer()):
         super().__init__(numPaths, pathLength, segConvFactor)
         self._linDensity = self._convSegments(linDensity, False)
         self._persisLength = self._convSegments(persisLength, True)
         self.__pathLength = pathLength
+        self._myAnalyzer = myAnalyzer
 
         self._startCollector()
 
@@ -336,20 +385,29 @@ class WLCCollector(Collector):
         # Loop over all combinations of density and persistence length
         for c, lp in zip(linDensity.flatten(),
                          persisLength.flatten()):
-            print('Density: %r, Persistence length: %r'
-                  %(c, lp))
+            #print('Density: %r, Persistence length: %r'
+            #      %(c, lp))
 
             numSegments = self.__pathLength / c
-            print('Number of segments: %r' % numSegments)
+            #print('Number of segments: %r' % numSegments)
             
             # Does the collector already have a path object?
-            if not hasattr(self, 'myPath'):
+            if not hasattr(self, '_myPath'):
                 self._myPath = WormlikeChain(numSegments[0], lp)
-            
+
+            Rg = zeros(numPaths)
             for ctr in range(self.numPaths):
                 self._myPath.numSegments = numSegments[ctr]
                 self._myPath.pLength = lp
                 self._myPath.makeNewPath()
+
+                # Analyze the new path for its statistics
+                #if hasattr(self, '_myAnalyzer'):
+                #    currRg = self._myAnalyzer.computeRg(self._myPath)
+                #    Rg[ctr] = currRg
+                Rg[ctr] = self._myPath.computeRg()
+
+            print('%r' % Rg)
 
 class SizeException(Exception):
     pass
@@ -406,13 +464,11 @@ if __name__ == '__main__':
 
     myCollector = WLCCollector(numPaths, pathLength, linDensity, persisLength, segConvFactor)"""
 
-    # Test case 5: Create an analyzer and compute the Rg of a WLC.
-    numSegments, pLength = 1000.1, 25
-    myChain = WormlikeChain(numSegments, pLength)
+    # Test case 5: Create an analyzer and compute the Rg of a WLC. 
+    numPaths = 5 # Number of paths per pair of walk parameters
+    pathLength = (2000) **(0.5) * randn(numPaths) + 25000 # bp in walk
+    linDensity = array([40, 50]) # bp / nm
+    persisLength = array([15, 20, 25]) # nm
+    segConvFactor = 10 / min(persisLength) # segments / min persisLen
 
-    myAnalyzer = Analyzer()
-    myAnalyzer.computeRg(myChain)
-
-    # Now test Analyzer's error handling of improperly sized paths.
-    myChain.path = array([[1,2,3,4],[5,6,7,8]])
-    myAnalyzer.computeRg(myChain)
+    myCollector = WLCCollector(numPaths, pathLength, linDensity, persisLength, segConvFactor)
