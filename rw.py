@@ -10,7 +10,7 @@ from math import modf
 from textwrap import dedent
 from numpy import pi, cos, sin, arccos, meshgrid, sum, var, zeros
 from numpy import array, cross, concatenate, hstack, vstack, cumsum
-from numpy import histogram
+from numpy import histogram, exp, mean
 from numpy.random import randn, random
 from numpy.linalg import norm
 import NumPyDB as NPDB
@@ -171,7 +171,7 @@ class WormlikeChain(Path):
         numSegInt = int(numSegInt)
         
         # Create the displacement distances in the tangent planes
-        angDisp = self.pLength ** (-0.5) * randn(self.numSegments - 1)
+        angDisp = (2 / self.pLength) ** (0.5) * randn(self.numSegments - 1)
         tanPlaneDisp = sin(angDisp)
 
         # Create random vectors uniformly sampled from the unit sphere
@@ -254,38 +254,77 @@ class WormlikeChain(Path):
         self._checkPath()
 
 class Analyzer():
-    """Analyzes paths for filtering and computing statistics.
+    """Analyzes histograms of polymer paths.
 
+    Parameters
+    ----------
+    dbName : str
+        The name of the pickle database that contains the histogram
+        data.
+
+    Attributes
+    ----------
+    myDB : NumPyDB_pickle object
+        Object for writing and loading radius of gyration histograms.
+        
     """
-    def __init__(self):
-        print('Hello. I am an analyzer.')
+    def __init__(self, dbName):
+        self.dbName = dbName
+        self._myDB = NPDB.NumPyDB_pickle(dbName, mode = 'load')
 
-    def computeRg(self, myPath):
-        """Compute the radius of gyration of a path.
-
-        computeRg() calculates the radius of gyration of a Path object
-        and assigns it to a field within the same Path object.
+    def computeMeanRg(self, identifier):
+        """Compute the mean radius of gyration from histogram data.
 
         Parameters
         ----------
-        myPath : Path or child of Path
-            Path for which the radius of gyration is to be determined
+        identifier : str
+            String identifier for which dataset to import.
+
+        Returns
+        -------
+        meanRg : float
+            The mean radius of gyration determined from the histogram.
+
         """
-        pathShape = myPath.path.shape
-        if pathShape[1] != 2 and pathShape[1] != 3:
-            errorStr = dedent('''
-            Error: Path array has %d columns.
-            A path must have either 2 or 3 columns.
-            For 2D walks, the columns are the x and y coordinates.
-            For 3D walks, the columns are the x, y, and z coordinates.
-            ''' % pathShape[1])
-            
-            raise SizeException(errorStr)
+        importData = self._myDB.load(identifier)
+        myHist = importData[0][0]
+        myBins = importData[0][1]
+        binWidth = importData[0][2]
 
-        secondMoments = var(myPath.path, axis = 0)
-        Rg = (sum(secondMoments)) ** (0.5)
+        # Find the centers of each histogram bin
+        binCenters = myBins + binWidth / 2
+        binCenters = binCenters[0:-1]
 
-        return Rg
+        meanRg = sum(binCenters * myHist * binWidth)
+        return meanRg
+
+    def WLCRg(self, c, Lp, N):
+        """Return the theoretical value for the gyration radius.
+
+        Parameters
+        ----------
+        c : float
+            The linear density of base pairs in the chain.
+        Lp : float
+            The persistence length of the wormlike chain.
+        N : float
+            The number of base pairs in the chain.
+
+        Returns
+        -------
+        meanRg : float
+            The mean gyration radius of a theoretical wormlike chain.
+        """
+
+        Rg2 = (Lp * N / c) / 3 - \
+                 Lp ** 2 + \
+                 2 * Lp ** 3 / (N / c) ** 2 * \
+                 ((N / c) - Lp * (1 - exp(- (N / c)/ Lp)))
+
+        meanRg = Rg2 ** 0.5
+
+        return meanRg
+
         
 class Collector():
     """Creates random walk paths and collects their statistics.
@@ -355,12 +394,6 @@ class Collector():
             
         return paramInSegments
 
-    def _save2Database(self):
-        """Save the gyration radii to a database for Numpy arrays.
-
-        """
-        
-
 class WLCCollector(Collector):
     """Collector for the wormlike chain.
 
@@ -388,13 +421,11 @@ class WLCCollector(Collector):
                  linDensity,
                  persisLength,
                  segConvFactor = 1,
-                 nameDB = 'rw_' + dateStr,
-                 myAnalyzer = Analyzer()):
+                 nameDB = 'rw_' + dateStr):
         super().__init__(numPaths, pathLength, segConvFactor, nameDB)
         self._linDensity = self._convSegments(linDensity, False)
         self._persisLength = self._convSegments(persisLength, True)
         self.__pathLength = pathLength
-        self._myAnalyzer = myAnalyzer
 
         self._startCollector()
 
@@ -454,7 +485,8 @@ class WLCCollector(Collector):
             
             # Save the gyration radii histogram to the database
             identifier = 'c=%s, lp=%s' % (c, lp)
-            myDB.dump((hist, bin_edges), identifier)
+            myDB.dump((hist, bin_edges, binWidth), identifier)
+            print('Mean RG: %f' % mean(Rg))
 
 class SizeException(Exception):
     pass
@@ -509,13 +541,44 @@ if __name__ == '__main__':
     persisLength = array([15, 20, 25]) # nm
     segConvFactor = 10 / min(persisLength) # segments / min persisLen
 
-    myCollector = WLCCollector(numPaths, pathLength, linDensity, persisLength, segConvFactor)"""
+    myCollector = WLCCollector(numPaths,
+                               pathLength,
+                               linDensity,
+                               persisLength,
+                               segConvFactor)"""
 
     # Test case 5: Create an analyzer and compute the Rg of a WLC. 
-    numPaths = 5 # Number of paths per pair of walk parameters
+    """numPaths = 5 # Number of paths per pair of walk parameters
     pathLength = (2000) **(0.5) * randn(numPaths) + 25000 # bp in walk
     linDensity = array([40, 50]) # bp / nm
     persisLength = array([15, 20, 25]) # nm
     segConvFactor = 10 / min(persisLength) # segments / min persisLen
 
-    myCollector = WLCCollector(numPaths, pathLength, linDensity, persisLength, segConvFactor)
+    myCollector = WLCCollector(numPaths,
+                               pathLength,
+                               linDensity,
+                               persisLength,
+                               segConvFactor)"""
+
+    # Test case 6: Test whether the computed Rg matches theory.
+    from numpy import ones
+    numPaths = 100 # Number of paths per pair of walk parameters
+    pathLength =  25000 * ones(numPaths) # bp in walk
+    linDensity = array([40]) # bp / nm
+    persisLength = array([20]) # nm
+    segConvFactor = 10 / min(persisLength) # segments / min persisLen
+
+    myCollector = WLCCollector(numPaths,
+                               pathLength,
+                               linDensity,
+                               persisLength,
+                               segConvFactor)
+
+    myAnalyzer = Analyzer('rw_2014-11-27')
+    meanSimRg = myAnalyzer.computeMeanRg('c=40.0, lp=20.0')
+    meanTheorRg = myAnalyzer.WLCRg(linDensity, persisLength, pathLength[0])
+    print("""
+          The mean simulated gyration radius is %d.
+          The mean theoretical gyration radius is %d."""
+          % (meanSimRg, meanTheorRg))
+                               
