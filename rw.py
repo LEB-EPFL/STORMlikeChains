@@ -10,8 +10,18 @@ from math import modf
 from textwrap import dedent
 from numpy import pi, cos, sin, arccos, meshgrid, sum, var, zeros
 from numpy import array, cross, concatenate, hstack, vstack, cumsum
+from numpy import histogram
 from numpy.random import randn, random
 from numpy.linalg import norm
+import NumPyDB as NPDB
+from datetime import datetime
+
+# Find current date for naming the database.
+currentTime = datetime.now()
+year = currentTime.year
+month = currentTime.month
+day = currentTime.day
+dateStr = "%s-%s-%s" % (year, month, day)
 
 class Path():
     def _normVector(self, vectors):
@@ -302,7 +312,11 @@ class Collector():
         
     """
 
-    def __init__(self, numPaths, pathLength, segConvFactor = 1):
+    def __init__(self,
+                 numPaths,
+                 pathLength,
+                 segConvFactor = 1,
+                 nameDB = 'rw_' + dateStr):
         if numPaths != len(pathLength):
             errorStr = dedent('''
                 Number of paths input: %r
@@ -315,6 +329,7 @@ class Collector():
         
         self.numPaths = numPaths
         self._segConvFactor = segConvFactor
+        self._nameDB = nameDB
         self.__pathLength = self._convSegments(pathLength, True)
 
     def _convSegments(self, pathParam, multiplyBool):
@@ -339,6 +354,12 @@ class Collector():
             paramInSegments = pathParam / self._segConvFactor
             
         return paramInSegments
+
+    def _save2Database(self):
+        """Save the gyration radii to a database for Numpy arrays.
+
+        """
+        
 
 class WLCCollector(Collector):
     """Collector for the wormlike chain.
@@ -367,8 +388,9 @@ class WLCCollector(Collector):
                  linDensity,
                  persisLength,
                  segConvFactor = 1,
+                 nameDB = 'rw_' + dateStr,
                  myAnalyzer = Analyzer()):
-        super().__init__(numPaths, pathLength, segConvFactor)
+        super().__init__(numPaths, pathLength, segConvFactor, nameDB)
         self._linDensity = self._convSegments(linDensity, False)
         self._persisLength = self._convSegments(persisLength, True)
         self.__pathLength = pathLength
@@ -382,6 +404,9 @@ class WLCCollector(Collector):
         """
         linDensity, persisLength = meshgrid(self._linDensity,
                                             self._persisLength)
+
+        myDB = NPDB.NumPyDB_pickle(self._nameDB)
+        
         # Loop over all combinations of density and persistence length
         for c, lp in zip(linDensity.flatten(),
                          persisLength.flatten()):
@@ -407,7 +432,29 @@ class WLCCollector(Collector):
                 #    Rg[ctr] = currRg
                 Rg[ctr] = self._myPath.computeRg()
 
-            print('%r' % Rg)
+            """=======================================================
+            Possibly move everything below here to a function for
+            organizational purposes and clarity.
+            """
+                
+            # Convert back to user-defined units
+            c = self._convSegments(c, True)
+            lp = self._convSegments(lp, False)
+            Rg = self._convSegments(Rg, False)
+
+            # Create histogram of Rg data
+            stdRg = var(Rg) ** (0.5)
+            numRg = len(Rg)
+            '''The following is from Scott, Biometrika 66, 605 (1979)
+
+            '''
+            binWidth = 3.49 * stdRg * numRg ** (-1/3)
+            numBins = int((max(Rg) - min(Rg)) / binWidth)
+            hist, bin_edges = histogram(Rg, density = True)
+            
+            # Save the gyration radii histogram to the database
+            identifier = 'c=%s, lp=%s' % (c, lp)
+            myDB.dump((hist, bin_edges), identifier)
 
 class SizeException(Exception):
     pass
