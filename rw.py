@@ -10,7 +10,7 @@ from math import modf
 from textwrap import dedent
 from numpy import pi, cos, sin, arccos, meshgrid, sum, var, zeros
 from numpy import array, cross, concatenate, hstack, vstack, cumsum
-from numpy import histogram, exp, mean
+from numpy import histogram, exp, mean, ceil, arange
 from numpy.random import randn, random
 from numpy.linalg import norm
 import NumPyDB as NPDB
@@ -325,7 +325,6 @@ class Analyzer():
 
         return meanRg
 
-        
 class Collector():
     """Creates random walk paths and collects their statistics.
 
@@ -441,8 +440,6 @@ class WLCCollector(Collector):
         # Loop over all combinations of density and persistence length
         for c, lp in zip(linDensity.flatten(),
                          persisLength.flatten()):
-            #print('Density: %r, Persistence length: %r'
-            #      %(c, lp))
 
             numSegments = self.__pathLength / c
             #print('Number of segments: %r' % numSegments)
@@ -456,6 +453,7 @@ class WLCCollector(Collector):
                 self._myPath.numSegments = numSegments[ctr]
                 self._myPath.pLength = lp
                 self._myPath.makeNewPath()
+                print(ctr)
 
                 # Analyze the new path for its statistics
                 #if hasattr(self, '_myAnalyzer'):
@@ -473,6 +471,9 @@ class WLCCollector(Collector):
             lp = self._convSegments(lp, False)
             Rg = self._convSegments(Rg, False)
 
+            print('Density: %r, Persistence length: %r'
+                  %(c, lp))
+            
             # Create histogram of Rg data
             stdRg = var(Rg) ** (0.5)
             numRg = len(Rg)
@@ -480,13 +481,13 @@ class WLCCollector(Collector):
 
             '''
             binWidth = 3.49 * stdRg * numRg ** (-1/3)
-            numBins = int((max(Rg) - min(Rg)) / binWidth)
-            hist, bin_edges = histogram(Rg, density = True)
+            numBins = ceil((max(Rg) - min(Rg)) / binWidth)
+            hist, bin_edges = histogram(Rg, numBins, density = True)
             
             # Save the gyration radii histogram to the database
             identifier = 'c=%s, lp=%s' % (c, lp)
             myDB.dump((hist, bin_edges, binWidth), identifier)
-            print('Mean RG: %f' % mean(Rg))
+            print('Mean of all path Rg\'s: %f' % mean(Rg))
 
 class SizeException(Exception):
     pass
@@ -547,7 +548,7 @@ if __name__ == '__main__':
                                persisLength,
                                segConvFactor)"""
 
-    # Test case 5: Create an analyzer and compute the Rg of a WLC. 
+    # Test case 5: Compute the Rg of a WLC. 
     """numPaths = 5 # Number of paths per pair of walk parameters
     pathLength = (2000) **(0.5) * randn(numPaths) + 25000 # bp in walk
     linDensity = array([40, 50]) # bp / nm
@@ -561,12 +562,12 @@ if __name__ == '__main__':
                                segConvFactor)"""
 
     # Test case 6: Test whether the computed Rg matches theory.
-    from numpy import ones
-    numPaths = 100 # Number of paths per pair of walk parameters
+    """from numpy import ones
+    numPaths = 10000 # Number of paths per pair of walk parameters
     pathLength =  25000 * ones(numPaths) # bp in walk
-    linDensity = array([40]) # bp / nm
-    persisLength = array([20]) # nm
-    segConvFactor = 10 / min(persisLength) # segments / min persisLen
+    linDensity = array([90]) # bp / nm
+    persisLength = array([170]) # nm
+    segConvFactor = 100 / min(persisLength) # segments / min persisLen
 
     myCollector = WLCCollector(numPaths,
                                pathLength,
@@ -575,10 +576,58 @@ if __name__ == '__main__':
                                segConvFactor)
 
     myAnalyzer = Analyzer('rw_2014-11-27')
-    meanSimRg = myAnalyzer.computeMeanRg('c=40.0, lp=20.0')
+    identifier = 'c=%0.1f, lp=%0.1f' % (linDensity, persisLength)
+    meanSimRg = myAnalyzer.computeMeanRg(identifier)
     meanTheorRg = myAnalyzer.WLCRg(linDensity, persisLength, pathLength[0])
-    print("""
-          The mean simulated gyration radius is %d.
-          The mean theoretical gyration radius is %d."""
-          % (meanSimRg, meanTheorRg))
-                               
+    print(dedent('''
+                 The mean of the simulated distribution is %f.
+                 The mean theoretical gyration radius is %f.'''
+                 % (meanSimRg, meanTheorRg)))"""
+
+    # Test case 7: Test the computed Rg's over a range of parameters
+    from numpy import ones, append
+    import matplotlib.pyplot as plt
+    numPaths = 1000 # Number of paths per pair of walk parameters
+    pathLength =  25000 * ones(numPaths) # bp in walk
+    linDensity = arange(10, 110, 20)  # bp / nm
+    persisLength = arange(10, 210, 20) # nm
+    segConvFactor = 25 / min(persisLength) # segments / min persisLen
+    nameDB = 'rw_' + dateStr + '_long'
+
+    """myCollector = WLCCollector(numPaths,
+                               pathLength,
+                               linDensity,
+                               persisLength,
+                               segConvFactor,
+                               nameDB)"""
+    
+    myAnalyzer = Analyzer(nameDB)
+
+    c, lp = meshgrid(linDensity, persisLength)
+    errorRg = array([])
+    
+    # Loop over all combinations of density and persistence length
+    for cCtr, lpCtr in zip(c.flatten(), lp.flatten()):
+
+        identifier = 'c=%0.1f, lp=%0.1f' % (cCtr, lpCtr)
+        meanSimRg = myAnalyzer.computeMeanRg(identifier)
+        meanTheorRg = myAnalyzer.WLCRg(cCtr, lpCtr, pathLength[0])
+        errorRg = append(errorRg,
+                          abs(meanSimRg - meanTheorRg) / meanTheorRg)
+        
+        print(dedent('''
+                     c=%0.1f, lp=%0.1f
+                     The mean of the simulated distribution is %f.
+                     The mean theoretical gyration radius is %f.
+                     The error in the mean is %f.'''
+                     % (cCtr,
+                        lpCtr,
+                        meanSimRg,
+                        meanTheorRg,
+                        abs(meanSimRg - meanTheorRg) / meanTheorRg)))
+
+    plt.hist(errorRg)
+    plt.xlabel(r'Percent error in mean $R_g$ values')
+    plt.ylabel('Number of occurrences')
+    plt.grid(True)
+    plt.show()

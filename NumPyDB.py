@@ -82,7 +82,7 @@ class NumPyDB_pickle (NumPyDB):
         """Dump NumPy array a with identifier."""
         fd = open(self.dn, 'ab');  fm = open(self.pn, 'a')
         fm.write("%d\t\t %s\n" % (fd.tell(), identifier))
-        print('%r' % a)
+        #print('%r' % a)
         pickle.dump(a, fd)
         fd.close();  fm.close()
 
