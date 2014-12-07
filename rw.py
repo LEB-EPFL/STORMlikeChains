@@ -12,28 +12,14 @@ from numpy import pi, cos, sin, arccos, meshgrid, sum, var, zeros
 from numpy import array, cross, concatenate, hstack, cumsum
 from numpy import histogram, exp, mean, ceil, arange
 from numpy.random import randn, random
+from scipy.linalg import norm
 import NumPyDB as NPDB
 from datetime import datetime
 
-import cProfile, pstats
 from scipy.linalg import get_blas_funcs
 # Import nrm2 from FortranBLAS library optimized for vectors.
 # I've found that this can be faster than scipy.linalg.norm().
-nrm2, = get_blas_funcs(('nrm2',), (array([1.0, 2.0, 3.0]), ))
-
-def do_cprofile(func):
-    def profiled_func(*args, **kwargs):
-        profile = cProfile.Profile()
-        try:
-            profile.enable()
-            result = func(*args, **kwargs)
-            profile.disable()
-            return result
-        finally:
-            p = pstats.Stats(profile)
-            p.strip_dirs().sort_stats('cumulative').print_stats()            
-            
-    return profiled_func
+nrm2, = get_blas_funcs(('nrm2',), dtype = 'float64')
 
 # Find current date for naming the database.
 currentTime = datetime.now()
@@ -123,7 +109,6 @@ class WormlikeChain(Path):
         self.pLength = pLength
         self.makeNewPath(initPoint)
 
-    #@do_cprofile
     def _makePath(self, initPoint = array([1, 0, 0])):
         """Create the wormlike chain.
 
@@ -169,7 +154,8 @@ class WormlikeChain(Path):
         numSegInt = int(numSegInt)
         
         # Create the displacement distances in the tangent planes
-        angDisp = (2 / self.pLength) ** (0.5) * randn(self.numSegments - 1)
+        angDisp = (2 / self.pLength) ** (0.5) \
+                   * randn(numSegInt - 1)
         tanPlaneDisp = sin(angDisp)
 
         # Create random vectors uniformly sampled from the unit sphere
@@ -188,6 +174,7 @@ class WormlikeChain(Path):
                                         tanPlaneDispFinal))
             randVecs = hstack((randVecs, randVecFinal))
 
+        # Primary iterative loop for creating the chain
         currPoint = initPoint
         workingPath = zeros((numSegInt + 1 , 3))
         workingPath[0, :] = currPoint
@@ -201,8 +188,6 @@ class WormlikeChain(Path):
                        (currPoint[1] * randVecs[0,ctr]))
             dispVector = array([crossX, crossY, crossZ])
 
-            #dispVector = cross(currPoint, randVecs[:,ctr])
-
             # Check if displacement and currPoint vectors are parallel
             while nrm2(dispVector) == 0:
                 newRandVec = self._randPointSphere(1)
@@ -210,8 +195,9 @@ class WormlikeChain(Path):
 
             # Move the currPoint vector in the tangent plane
             # (I seem to get faster norms when calling the BLAS
-            # function from this point.)               
-            dispVector = nrm2(dispVector) * tanPlaneDisp[ctr]
+            # function from this point instead of scipy.linalg.norm.)
+            dispVector = (dispVector / nrm2(dispVector)) \
+              * tanPlaneDisp[ctr]
             
             # Back project new point onto sphere
             projDistance = 1 - cos(angDisp[ctr])
@@ -658,4 +644,3 @@ if __name__ == '__main__':
                                persisLength,
                                segConvFactor,
                                nameDB)"""
-    
