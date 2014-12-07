@@ -16,6 +16,22 @@ from numpy.linalg import norm
 import NumPyDB as NPDB
 from datetime import datetime
 
+import cProfile, pstats
+
+def do_cprofile(func):
+    def profiled_func(*args, **kwargs):
+        profile = cProfile.Profile()
+        try:
+            profile.enable()
+            result = func(*args, **kwargs)
+            profile.disable()
+            return result
+        finally:
+            p = pstats.Stats(profile)
+            p.strip_dirs().sort_stats('cumulative').print_stats()            
+            
+    return profiled_func
+
 # Find current date for naming the database.
 currentTime = datetime.now()
 year = currentTime.year
@@ -126,6 +142,7 @@ class WormlikeChain(Path):
         self.pLength = pLength
         self.makeNewPath(initPoint)
 
+    @do_cprofile
     def _makePath(self, initPoint = array([1, 0, 0])):
         """Create the wormlike chain.
 
@@ -434,8 +451,6 @@ class WLCCollector(Collector):
         """
         linDensity, persisLength = meshgrid(self._linDensity,
                                             self._persisLength)
-
-        myDB = NPDB.NumPyDB_pickle(self._nameDB)
         
         # Loop over all combinations of density and persistence length
         for c, lp in zip(linDensity.flatten(),
@@ -461,7 +476,7 @@ class WLCCollector(Collector):
                 #    Rg[ctr] = currRg
                 Rg[ctr] = self._myPath.computeRg()
 
-            """=======================================================
+            """=====p==================================================
             Possibly move everything below here to a function for
             organizational purposes and clarity.
             """
@@ -473,21 +488,26 @@ class WLCCollector(Collector):
 
             print('Density: %r, Persistence length: %r'
                   %(c, lp))
-            
-            # Create histogram of Rg data
-            stdRg = var(Rg) ** (0.5)
-            numRg = len(Rg)
-            '''The following is from Scott, Biometrika 66, 605 (1979)
 
-            '''
-            binWidth = 3.49 * stdRg * numRg ** (-1/3)
-            numBins = ceil((max(Rg) - min(Rg)) / binWidth)
-            hist, bin_edges = histogram(Rg, numBins, density = True)
+            try:
+                myDB = NPDB.NumPyDB_pickle(self._nameDB)
+
+                # Create histogram of Rg data
+                stdRg = var(Rg) ** (0.5)
+                numRg = len(Rg)
+                '''The following is from Scott, Biometrika 66, 605 (1979)
+
+                '''
+                binWidth = 3.49 * stdRg * numRg ** (-1/3)
+                numBins = ceil((max(Rg) - min(Rg)) / binWidth)
+                hist, bin_edges = histogram(Rg, numBins, density = True)
             
-            # Save the gyration radii histogram to the database
-            identifier = 'c=%s, lp=%s' % (c, lp)
-            myDB.dump((hist, bin_edges, binWidth), identifier)
-            print('Mean of all path Rg\'s: %f' % mean(Rg))
+                # Save the gyration radii histogram to the database
+                identifier = 'c=%s, lp=%s' % (c, lp)
+                myDB.dump((hist, bin_edges, binWidth), identifier)
+                print('Mean of all path Rg\'s: %f' % mean(Rg))
+            except:
+                pass
 
 class SizeException(Exception):
     pass
@@ -585,7 +605,7 @@ if __name__ == '__main__':
                  % (meanSimRg, meanTheorRg)))"""
 
     # Test case 7: Test the computed Rg's over a range of parameters
-    from numpy import ones, append
+    """from numpy import ones, append
     import matplotlib.pyplot as plt
     numPaths = 1000 # Number of paths per pair of walk parameters
     pathLength =  25000 * ones(numPaths) # bp in walk
@@ -594,12 +614,12 @@ if __name__ == '__main__':
     segConvFactor = 25 / min(persisLength) # segments / min persisLen
     nameDB = 'rw_' + dateStr + '_long'
 
-    """myCollector = WLCCollector(numPaths,
+    '''myCollector = WLCCollector(numPaths,
                                pathLength,
                                linDensity,
                                persisLength,
                                segConvFactor,
-                               nameDB)"""
+                               nameDB)'''
     
     myAnalyzer = Analyzer(nameDB)
 
@@ -630,4 +650,22 @@ if __name__ == '__main__':
     plt.xlabel(r'Percent error in mean $R_g$ values')
     plt.ylabel('Number of occurrences')
     plt.grid(True)
-    plt.show()
+    plt.show()"""
+
+    # Test case 8: Profile the WormlikeChain
+    from numpy import ones, append
+    import matplotlib.pyplot as plt
+    numPaths = 1 # Number of paths per pair of walk parameters
+    pathLength =  25000 * ones(numPaths) # bp in walk
+    linDensity = arange(20, 120, 20)  # bp / nm
+    persisLength = arange(20, 220, 20) # nm
+    segConvFactor = 25 / min(persisLength) # segments / min persisLen
+    nameDB = 'rw_' + dateStr + '_long'
+
+    myCollector = WLCCollector(numPaths,
+                               pathLength,
+                               linDensity,
+                               persisLength,
+                               segConvFactor,
+                               nameDB)
+    
