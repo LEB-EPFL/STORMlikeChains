@@ -3,18 +3,23 @@
 """
 
 __author__ = 'Kyle M. Douglass'
-__version__ = '0.1'
+__version__ = '0.2'
 __email__ = 'kyle.m.douglass@gmail.com'
 
 from math import modf
 from textwrap import dedent
 from numpy import pi, cos, sin, arccos, meshgrid, sum, var, zeros
-from numpy import array, cross, concatenate, hstack, vstack, cumsum
+from numpy import array, cross, concatenate, hstack, cumsum
 from numpy import histogram, exp, mean, ceil, arange
 from numpy.random import randn, random
-from numpy.linalg import norm
+from scipy.linalg import norm
 import NumPyDB as NPDB
 from datetime import datetime
+
+from scipy.linalg import get_blas_funcs
+# Import nrm2 from FortranBLAS library optimized for vectors.
+# I've found that this can be faster than scipy.linalg.norm().
+nrm2, = get_blas_funcs(('nrm2',), dtype = 'float64')
 
 # Find current date for naming the database.
 currentTime = datetime.now()
@@ -23,29 +28,7 @@ month = currentTime.month
 day = currentTime.day
 dateStr = "%s-%s-%s" % (year, month, day)
 
-class Path():
-    def _normVector(self, vectors):
-        """Normalize an array of vectors.
-
-        Parameters
-        ----------
-        vectors : array of double
-            3 x N array of doubles with x, y, and z coordinates.
-
-        Returns
-        -------
-        vectorsNormed : array of double
-            The normalized vectors from the original vectors array.
-        """
-        if vectors.shape[0] != 3:
-            raise SizeException(
-                'The number of rows in vectors is not 3.')
-        
-        normFactors = norm(vectors, axis = 0)
-        vectorsNormed = vectors / normFactors
-
-        return vectorsNormed
-                
+class Path():             
     def _randPointSphere(self, numPoints):
         """Randomly select points from the surface of a sphere.
     
@@ -171,7 +154,8 @@ class WormlikeChain(Path):
         numSegInt = int(numSegInt)
         
         # Create the displacement distances in the tangent planes
-        angDisp = (2 / self.pLength) ** (0.5) * randn(self.numSegments - 1)
+        angDisp = (2 / self.pLength) ** (0.5) \
+                   * randn(numSegInt - 1)
         tanPlaneDisp = sin(angDisp)
 
         # Create random vectors uniformly sampled from the unit sphere
@@ -190,30 +174,41 @@ class WormlikeChain(Path):
                                         tanPlaneDispFinal))
             randVecs = hstack((randVecs, randVecFinal))
 
+        # Primary iterative loop for creating the chain
         currPoint = initPoint
+        workingPath = zeros((numSegInt + 1 , 3))
+        workingPath[0, :] = currPoint
         for ctr in range(len(tanPlaneDisp)):
             # Create a displacement in the plane tangent to currPoint
-            dispVector = cross(currPoint, randVecs[:,ctr])
+            crossX = ((currPoint[1] * randVecs[2,ctr]) - \
+                       (currPoint[2] * randVecs[1,ctr]))
+            crossY = ((currPoint[2] * randVecs[0,ctr]) - \
+                       (currPoint[0] * randVecs[2,ctr]))
+            crossZ = ((currPoint[0] * randVecs[1,ctr]) - \
+                       (currPoint[1] * randVecs[0,ctr]))
+            dispVector = array([crossX, crossY, crossZ])
 
             # Check if displacement and currPoint vectors are parallel
-            while norm(dispVector) == 0:
+            while nrm2(dispVector) == 0:
                 newRandVec = self._randPointSphere(1)
                 dispVector = cross(currPoint, newRandVec)
 
             # Move the currPoint vector in the tangent plane
-            dispVector = self._normVector(dispVector) \
-                    * tanPlaneDisp[ctr]
+            # (I seem to get faster norms when calling the BLAS
+            # function from this point instead of scipy.linalg.norm.)
+            dispVector = (dispVector / nrm2(dispVector)) \
+              * tanPlaneDisp[ctr]
             
             # Back project new point onto sphere
             projDistance = 1 - cos(angDisp[ctr])
             nextPoint = (1 - projDistance) * currPoint + dispVector
                         
             # Append nextPoint to array of points on the path
-            self.path = vstack((self.path, nextPoint))
+            workingPath[ctr + 1, :] = nextPoint
             currPoint = nextPoint
 
         # Add up the vectors in path to create the polymer
-        self.path = cumsum(self.path, axis = 0)
+        self.path = cumsum(workingPath, axis = 0)
 
     def computeRg(self):
         """Compute the radius of gyration of a path.
@@ -434,15 +429,12 @@ class WLCCollector(Collector):
         """
         linDensity, persisLength = meshgrid(self._linDensity,
                                             self._persisLength)
-
-        myDB = NPDB.NumPyDB_pickle(self._nameDB)
         
         # Loop over all combinations of density and persistence length
         for c, lp in zip(linDensity.flatten(),
                          persisLength.flatten()):
 
             numSegments = self.__pathLength / c
-            #print('Number of segments: %r' % numSegments)
             
             # Does the collector already have a path object?
             if not hasattr(self, '_myPath'):
@@ -472,21 +464,26 @@ class WLCCollector(Collector):
 
             print('Density: %r, Persistence length: %r'
                   %(c, lp))
-            
-            # Create histogram of Rg data
-            stdRg = var(Rg) ** (0.5)
-            numRg = len(Rg)
-            '''The following is from Scott, Biometrika 66, 605 (1979)
 
-            '''
-            binWidth = 3.49 * stdRg * numRg ** (-1/3)
-            numBins = ceil((max(Rg) - min(Rg)) / binWidth)
-            hist, bin_edges = histogram(Rg, numBins, density = True)
+            try:
+                myDB = NPDB.NumPyDB_pickle(self._nameDB)
+
+                # Create histogram of Rg data
+                stdRg = var(Rg) ** (0.5)
+                numRg = len(Rg)
+                '''The following is from Scott, Biometrika 66, 605 (1979)
+
+                '''
+                binWidth = 3.49 * stdRg * numRg ** (-1/3)
+                numBins = ceil((max(Rg) - min(Rg)) / binWidth)
+                hist, bin_edges = histogram(Rg, numBins, density = True)
             
-            # Save the gyration radii histogram to the database
-            identifier = 'c=%s, lp=%s' % (c, lp)
-            myDB.dump((hist, bin_edges, binWidth), identifier)
-            print('Mean of all path Rg\'s: %f' % mean(Rg))
+                # Save the gyration radii histogram to the database
+                identifier = 'c=%s, lp=%s' % (c, lp)
+                myDB.dump((hist, bin_edges, binWidth), identifier)
+                print('Mean of all path Rg\'s: %f' % mean(Rg))
+            except:
+                pass
 
 class SizeException(Exception):
     pass
@@ -564,8 +561,8 @@ if __name__ == '__main__':
     from numpy import ones
     numPaths = 1000 # Number of paths per pair of walk parameters
     pathLength =  25000 * ones(numPaths) # bp in walk
-    linDensity = array([90]) # bp / nm
-    persisLength = array([170]) # nm
+    linDensity = array([100]) # bp / nm
+    persisLength = array([100]) # nm
     segConvFactor = 25 / min(persisLength) # segments / min persisLen
     nameDB = 'rw_' + dateStr
 
@@ -593,9 +590,10 @@ if __name__ == '__main__':
     linDensity = arange(10, 110, 20)  # bp / nm
     persisLength = arange(10, 210, 20) # nm
     segConvFactor = 25 / min(persisLength) # segments / min persisLen
-    nameDB = 'rw_' + dateStr + '_long'
+    nameDB = 'rw_' + dateStr
 
     '''myCollector = WLCCollector(numPaths,
+
                                pathLength,
                                linDensity,
                                persisLength,
@@ -632,3 +630,19 @@ if __name__ == '__main__':
     plt.ylabel('Number of occurrences')
     plt.grid(True)
     plt.show()"""
+
+    # Test case 8: Profile the WormlikeChain
+    """from numpy import ones, append
+    numPaths = 1 # Number of paths per pair of walk parameters
+    pathLength =  25000 * ones(numPaths) # bp in walk
+    linDensity = arange(20, 120, 20)  # bp / nm
+    persisLength = arange(20, 220, 20) # nm
+    segConvFactor = 25 / min(persisLength) # segments / min persisLen
+    nameDB = 'rw_' + dateStr
+
+    myCollector = WLCCollector(numPaths,
+                               pathLength,
+                               linDensity,
+                               persisLength,
+                               segConvFactor,
+                               nameDB)"""
