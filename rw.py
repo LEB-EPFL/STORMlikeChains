@@ -453,7 +453,6 @@ class WLCCollector(Collector):
                 self._myPath.numSegments = numSegments[ctr]
                 self._myPath.pLength = lp
                 self._myPath.makeNewPath()
-                print(ctr)
 
                 # Analyze the new path for its statistics
                 #if hasattr(self, '_myAnalyzer'):
@@ -562,30 +561,32 @@ if __name__ == '__main__':
                                segConvFactor)"""
 
     # Test case 6: Test whether the computed Rg matches theory.
-    """from numpy import ones
-    numPaths = 10000 # Number of paths per pair of walk parameters
+    from numpy import ones
+    numPaths = 1000 # Number of paths per pair of walk parameters
     pathLength =  25000 * ones(numPaths) # bp in walk
     linDensity = array([90]) # bp / nm
     persisLength = array([170]) # nm
-    segConvFactor = 100 / min(persisLength) # segments / min persisLen
+    segConvFactor = 25 / min(persisLength) # segments / min persisLen
+    nameDB = 'rw_' + dateStr
 
     myCollector = WLCCollector(numPaths,
                                pathLength,
                                linDensity,
                                persisLength,
-                               segConvFactor)
+                               segConvFactor,
+                               nameDB)
 
-    myAnalyzer = Analyzer('rw_2014-11-27')
+    myAnalyzer = Analyzer(nameDB)
     identifier = 'c=%0.1f, lp=%0.1f' % (linDensity, persisLength)
     meanSimRg = myAnalyzer.computeMeanRg(identifier)
     meanTheorRg = myAnalyzer.WLCRg(linDensity, persisLength, pathLength[0])
     print(dedent('''
                  The mean of the simulated distribution is %f.
                  The mean theoretical gyration radius is %f.'''
-                 % (meanSimRg, meanTheorRg)))"""
+                 % (meanSimRg, meanTheorRg)))
 
     # Test case 7: Test the computed Rg's over a range of parameters
-    from numpy import ones, append
+    """from numpy import ones, append
     import matplotlib.pyplot as plt
     numPaths = 1000 # Number of paths per pair of walk parameters
     pathLength =  25000 * ones(numPaths) # bp in walk
@@ -594,12 +595,12 @@ if __name__ == '__main__':
     segConvFactor = 25 / min(persisLength) # segments / min persisLen
     nameDB = 'rw_' + dateStr + '_long'
 
-    """myCollector = WLCCollector(numPaths,
+    '''myCollector = WLCCollector(numPaths,
                                pathLength,
                                linDensity,
                                persisLength,
                                segConvFactor,
-                               nameDB)"""
+                               nameDB)'''
     
     myAnalyzer = Analyzer(nameDB)
 
@@ -630,4 +631,4 @@ if __name__ == '__main__':
     plt.xlabel(r'Percent error in mean $R_g$ values')
     plt.ylabel('Number of occurrences')
     plt.grid(True)
-    plt.show()
+    plt.show()"""
