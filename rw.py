@@ -9,8 +9,10 @@ __email__ = 'kyle.m.douglass@gmail.com'
 from math import modf
 from textwrap import dedent
 from numpy import pi, cos, sin, arccos, meshgrid, sum, var, zeros
-from numpy import array, cross, concatenate, hstack, cumsum
-from numpy import histogram, exp, mean, ceil, arange
+from numpy import array, cross, concatenate, hstack, cumsum, flatnonzero
+from numpy import histogram, exp, mean, ceil, arange, digitize, log
+from numpy import fromiter
+from numpy import float as npFloat
 from numpy.random import randn, random
 from scipy.linalg import norm
 import NumPyDB as NPDB
@@ -293,7 +295,93 @@ class Analyzer():
         meanRg = sum(binCenters * myHist * binWidth)
         return meanRg
 
+    def computeLLH(self, probFunc, data):
+        """Compute the log-likelihood of a given dataset.
+
+        computeLLH(self) determines the log-likelihood of a dataset
+        given a probability mass function for an experiment.
+
+        Parameters
+        ----------
+        probFunc : tuple of numpy arrays of floats
+
+            A tuple of two numpy arrays. One array represents the
+            normalized probability assigned to a bin and the other
+            array represents the bin edges. The bin array must be one
+            element larger than the probability array.
+        data : array of floats
+            The data array.
+
+        Returns
+        -------
+        llh : float
+            The log-likelihood for the dataset.
+        """
+        try:
+            if len(probFunc[0]) == len(probFunc[1]) + 1:
+                bins = probFunc[0]
+                prob = probFunc[1]
+            elif len(probFunc[1]) == len(probFunc[0]) + 1:
+                bins = probFunc[1]
+                prob = probFunc[0]
+            else:
+                raise SizeException
+            
+        except TypeError:
+            print('TypeError')
+            print('probFunc must be a tuple containing two arrays.')
+            
+        except SizeException:
+            errorStr = dedent('''
+                Length of probFunc[0]: %r
+                Length of probFunc[1]: %r
+
+                One of these values must be one greater than the
+                other.
+                '''
+                % (len(probFunc[0]), len(probFunc[1])))
+
+            print('SizeException')
+            print(errorStr)
+            
+        except:
+            errorStr = dedent('''
+            Unexpected error occurred. The arguments to computeLLH()
+            may be of incorrect type.''')
+            print(errorStr)
+
+        inds = digitize(data, bins)
+
+        # Find the probability associated with each data point given
+        # the input probability distribution/mass function
+        numDataPoints = len(data)
+        probPerPoint = [self._sortLLH(data[ctr],
+                                     inds[ctr],
+                                     len(bins),
+                                     prob) for ctr in range(numDataPoints)]
+
+        # Remove zeros from the returned array
+        probabilities = fromiter(probPerPoint, npFloat)
+        probabilities = probabilities[flatnonzero(probabilities)]
+        
+        print(log(probabilities))
+        llh = sum(log(probabilities))
+
+        return llh
+
+    def _sortLLH(self, dataPoint, index, binLength, hist):
+        """Helper function for sorting the probabilities by bins.
+        
+        """
+        if index == 0 or index == binLength:
+            probability = 0
+        else:
+            probability = hist[index -1]
+
+        return probability
+
     def WLCRg(self, c, Lp, N):
+
         """Return the theoretical value for the gyration radius.
 
         Parameters
@@ -307,8 +395,8 @@ class Analyzer():
 
         Returns
         -------
-        meanRg : float
-            The mean gyration radius of a theoretical wormlike chain.
+        meanRg : float 
+           The mean gyration radius of a theoretical wormlike chain.
         """
 
         Rg2 = (Lp * N / c) / 3 - \
@@ -558,7 +646,7 @@ if __name__ == '__main__':
                                segConvFactor)"""
 
     # Test case 6: Test whether the computed Rg matches theory.
-    from numpy import ones
+    """from numpy import ones
     numPaths = 1000 # Number of paths per pair of walk parameters
     pathLength =  25000 * ones(numPaths) # bp in walk
     linDensity = array([100]) # bp / nm
@@ -580,7 +668,7 @@ if __name__ == '__main__':
     print(dedent('''
                  The mean of the simulated distribution is %f.
                  The mean theoretical gyration radius is %f.'''
-                 % (meanSimRg, meanTheorRg)))
+                 % (meanSimRg, meanTheorRg)))"""
 
     # Test case 7: Test the computed Rg's over a range of parameters
     """from numpy import ones, append
@@ -646,3 +734,16 @@ if __name__ == '__main__':
                                persisLength,
                                segConvFactor,
                                nameDB)"""
+
+    # Test case 9: Testing the loglikelihood construction in Analyzer
+    nameDB = 'rw_2014-12-10'
+    myAnalyzer = Analyzer(nameDB)
+    
+    #myAnalyzer.computeLLH() # Returns a TypeError
+    #myAnalyzer.computeLLH(probFunc = [1], data = [1,2,3]) # Returns TypeError
+    #myAnalyzer.computeLLH(probFunc = ([1], [2]), data = [1,2,3]) # SizeException
+    
+    llh = myAnalyzer.computeLLH(probFunc = ([0.25, 0.5, 0.25], [-1, 0, 1, 2]),
+                                data = range(-2, 4))
+
+    print(llh)
