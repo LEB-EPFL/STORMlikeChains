@@ -4,7 +4,7 @@
 
 __author__ = 'Kyle M. Douglass'
 __version__ = '0.2'
-__email__ = 'kyle.m.douglass@gmail.com'
+__email__ = 'kyle.douglass@epfl.ch'
 
 from math import modf
 from textwrap import dedent
@@ -17,6 +17,7 @@ from numpy.random import randn, random
 from scipy.linalg import norm
 import NumPyDB as NPDB
 from datetime import datetime
+import time
 
 from scipy.linalg import get_blas_funcs
 # Import nrm2 from FortranBLAS library optimized for vectors.
@@ -517,6 +518,8 @@ class WLCCollector(Collector):
         """
         linDensity, persisLength = meshgrid(self._linDensity,
                                             self._persisLength)
+
+        myDB = NPDB.NumPyDB_pickle(self._nameDB)
         
         # Loop over all combinations of density and persistence length
         for c, lp in zip(linDensity.flatten(),
@@ -528,6 +531,7 @@ class WLCCollector(Collector):
             if not hasattr(self, '_myPath'):
                 self._myPath = WormlikeChain(numSegments[0], lp)
 
+            # Main loop for creating paths
             Rg = zeros(numPaths)
             for ctr in range(self.numPaths):
                 self._myPath.numSegments = numSegments[ctr]
@@ -554,8 +558,6 @@ class WLCCollector(Collector):
                   %(c, lp))
 
             try:
-                myDB = NPDB.NumPyDB_pickle(self._nameDB)
-
                 # Create histogram of Rg data
                 stdRg = var(Rg) ** (0.5)
                 numRg = len(Rg)
@@ -671,26 +673,29 @@ if __name__ == '__main__':
                  % (meanSimRg, meanTheorRg)))"""
 
     # Test case 7: Test the computed Rg's over a range of parameters
-    """from numpy import ones, append
+    from numpy import ones, append
     import matplotlib.pyplot as plt
-    numPaths = 1000 # Number of paths per pair of walk parameters
-    pathLength =  25000 * ones(numPaths) # bp in walk
+    numPaths = 50000 # Number of paths per pair of walk parameters
+    pathLength =  16000 * (random(numPaths) - 0.5) + 25000 # bp in walk
     linDensity = arange(10, 110, 20)  # bp / nm
     persisLength = arange(10, 210, 20) # nm
     segConvFactor = 25 / min(persisLength) # segments / min persisLen
     nameDB = 'rw_' + dateStr
 
-    '''myCollector = WLCCollector(numPaths,
+    tic = time.clock()
+    myCollector = WLCCollector(numPaths,
 
                                pathLength,
                                linDensity,
                                persisLength,
                                segConvFactor,
-                               nameDB)'''
+                               nameDB)
+    toc = time.clock()
+    print('Total processing time: %f' % (toc - tic))
     
     myAnalyzer = Analyzer(nameDB)
 
-    c, lp = meshgrid(linDensity, persisLength)
+    """c, lp = meshgrid(linDensity, persisLength)
     errorRg = array([])
     
     # Loop over all combinations of density and persistence length
@@ -736,7 +741,7 @@ if __name__ == '__main__':
                                nameDB)"""
 
     # Test case 9: Testing the loglikelihood construction in Analyzer
-    nameDB = 'rw_2014-12-10'
+    """nameDB = 'rw_2014-12-10'
     myAnalyzer = Analyzer(nameDB)
     
     #myAnalyzer.computeLLH() # Returns a TypeError
@@ -746,4 +751,4 @@ if __name__ == '__main__':
     llh = myAnalyzer.computeLLH(probFunc = ([0.25, 0.5, 0.25], [-1, 0, 1, 2]),
                                 data = range(-2, 4))
 
-    print(llh)
+    print(llh)"""
