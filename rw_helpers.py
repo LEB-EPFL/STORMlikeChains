@@ -8,14 +8,17 @@ __email__ = 'kyle.douglass@epfl.ch'
 
 import numpy as np
 import NumPyDB as NPDB
+import sys
 
-
-def loadData(fName):
-    pass
+np.seterr(divide='raise')
 
 def loadModel(dbName):
     """Loads a model polymer by reading the database generated from
     the polymer simulation.
+
+    Parameters
+    ----------
+    
 
     """
     myDB = NPDB.NumPyDB_pickle(dbName, mode = 'load')
@@ -46,19 +49,22 @@ def computeLLH(dbName, dataFName):
 
     computeLLH computes the log-likelihood for all the simulated
     parameter values in the simulation. It is a wrapper around a few
-    other functions and is intended to be an ease-of-use utility.
+    other functions and is intended to be an ease-of-use utility for
+    processing full experiments.
 
     """
-    simResults = loadModel(simResults)
-    data = loadData(dataFName) #WRITE THE LOAD DATA FUNCTION
+    simResults = loadModel(dbName)
+    data = np.loadtxt(dataFName)
 
     # Initialize numpy array for holding parameter-pair and LLH values
-    llhLandscape = np.zeros((len(simResults), 2))
+    llhLandscape = np.zeros((len(simResults),), dtype=('f4,f4,f4'))
     
     for ctr, key in enumerate(simResults):
         llh = computeSingleLLH(simResults[key], data)
-        llhLandscape[ctr,0] = key
-        llhLandscape[ctr,1] = llh
+        c, lp = key
+
+        # llhLandscape is a structured numpy array.
+        llhLandscape[ctr] = (c, lp, llh)
 
     return llhLandscape
 
@@ -120,23 +126,34 @@ def computeSingleLLH(probFunc, data):
                     for ctr in range(numDataPoints)]
 
     # Remove zeros from the returned array
-    probabilities = np.fromiter(probPerPoint, npFloat)
-    probabilities = probabilities[np.flatnonzero(probabilities)]
+    probabilities = np.fromiter(probPerPoint, np.float)
+    #probabilities = probabilities[np.flatnonzero(probabilities)]
 
-    llh = sum(log(probabilities))
+    try:
+        llh = np.sum(np.log(probabilities))
+    except: 
+        sys.exit('0 found in probabilities.')
+
     return llh
+
 
 def sortLLH(dataPoint, index, binLength, hist):
     """Helper function for sorting the probabilities by bins.
 
     """
     if index == 0 or index == binLength:
-        probability = 0
+        # This can't be set to zero because log-likelihoods are used.
+        probability = 1e-5
     else:
-        probability = hist[index - 1]
-
+        if hist[index - 1] == 0:
+            probability = 1e-5
+        else:
+            probability = hist[index - 1]
+        
     return probability
 
 if __name__ == '__main__':
-    pass
+    dataFName = 'saved_distrs/Original_Data_L_dataset_RgTrans.txt'
+    dbName = 'rw_2014-12-12'
 
+    llh = computeLLH(dbName, dataFName)
