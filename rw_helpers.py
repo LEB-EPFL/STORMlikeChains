@@ -9,6 +9,8 @@ __email__ = 'kyle.douglass@epfl.ch'
 import numpy as np
 import NumPyDB as NPDB
 import sys
+from sklearn.neighbors import KernelDensity
+from sklearn.grid_search import GridSearchCV
 
 np.seterr(divide='raise')
 
@@ -60,13 +62,54 @@ def computeLLH(dbName, dataFName):
     llhLandscape = np.zeros((len(simResults),), dtype=('f4,f4,f4'))
     
     for ctr, key in enumerate(simResults):
-        llh = computeSingleLLH(simResults[key], data)
+        #llh = computeSingleLLH(simResults[key], data)
+        llh = computeSingleLLH_KDE(simResults[key], data)
         c, lp = key
 
         # llhLandscape is a structured numpy array.
         llhLandscape[ctr] = (c, lp, llh)
 
     return llhLandscape
+
+def computeSingleLLH_KDE(probFunc, data):
+    """Compute the log-likelihood of a given dataset use KDE.
+
+    computeSingleLLH_KDE determines the log-likelihood of a dataset
+    given the full simulated data. It uses kernal density estimation
+    to approximate the continuous probability distribution function
+    from the simulations.
+
+    Parameters
+    ----------
+    probFunc : tuple of numpy arrays of floats
+        A tuple at least 4 elements, the last being the complete
+        simulated dataset..
+    data : array of floats
+        The data array.
+
+    Returns
+    -------
+    llh : float
+        The log-likelihood for the dataset.
+
+    """
+    # Add an axis so scikit-learn functions can operate on the data
+    Rg = probFunc[3][:, np.newaxis]
+    data = data[:, np.newaxis]
+
+    # The following is used to estimate the bandwidth, but it's very
+    # slow.
+    """grid = GridSearchCV(KernelDensity(),
+                        {'bandwidth' : np.linspace(1, 5, 25)},
+                        cv = 20)
+    grid.fit(Rg)
+    print('Best bandwidth: %r' % grid.best_params_)"""
+
+    #kde = KernelDensity(kernel = 'gaussian', bandwidth = grid.best_params_['bandwidth']).fit(Rg)
+    kde = KernelDensity(kernel = 'gaussian', bandwidth = 2).fit(Rg)
+    log_dens = kde.score_samples(data)
+
+    return sum(log_dens)
 
 def computeSingleLLH(probFunc, data):
     """Compute the log-likelihood of a given dataset.
@@ -154,6 +197,6 @@ def sortLLH(dataPoint, index, binLength, hist):
 
 if __name__ == '__main__':
     dataFName = 'saved_distrs/Original_Data_L_dataset_RgTrans.txt'
-    dbName = 'rw_2014-12-12'
+    dbName = 'rw_2014-12-19'
 
     llh = computeLLH(dbName, dataFName)

@@ -3,7 +3,7 @@
 """
 
 __author__ = 'Kyle M. Douglass'
-__version__ = '0.2'
+__version__ = '0.3'
 __email__ = 'kyle.douglass@epfl.ch'
 
 from math import modf
@@ -11,10 +11,12 @@ from textwrap import dedent
 from numpy import pi, cos, sin, arccos, meshgrid, sum, var, zeros
 from numpy import array, cross, concatenate, hstack, cumsum, flatnonzero
 from numpy import histogram, exp, mean, ceil, arange, digitize, log
-from numpy import fromiter
+from numpy import fromiter, newaxis, linspace
 from numpy import float as npFloat
 from numpy.random import randn, random
 from scipy.linalg import norm
+from sklearn.neighbors import KernelDensity
+from sklearn.grid_search import GridSearchCV
 import NumPyDB as NPDB
 from datetime import datetime
 import time
@@ -567,10 +569,10 @@ class WLCCollector(Collector):
                 binWidth = 3.49 * stdRg * numRg ** (-1/3)
                 numBins = ceil((max(Rg) - min(Rg)) / binWidth)
                 hist, bin_edges = histogram(Rg, numBins, density = True)
-            
+
                 # Save the gyration radii histogram to the database
                 identifier = 'c=%s, lp=%s' % (c, lp)
-                myDB.dump((hist, bin_edges, binWidth), identifier)
+                myDB.dump((hist, bin_edges, binWidth, Rg), identifier)
                 print('Mean of all path Rg\'s: %f' % mean(Rg))
             except:
                 pass
@@ -693,9 +695,9 @@ if __name__ == '__main__':
     toc = time.clock()
     print('Total processing time: %f' % (toc - tic))
     
-    myAnalyzer = Analyzer(nameDB)
+    """myAnalyzer = Analyzer(nameDB)
 
-    """c, lp = meshgrid(linDensity, persisLength)
+    c, lp = meshgrid(linDensity, persisLength)
     errorRg = array([])
     
     # Loop over all combinations of density and persistence length
@@ -752,3 +754,48 @@ if __name__ == '__main__':
                                 data = range(-2, 4))
 
     print(llh)"""
+
+    # Test case 10: Test KDE estimation
+    # Perform a kernel density estimation on the data
+    """import matplotlib.pyplot as plt
+    from numpy import ones, append, linspace, min, max, newaxis
+    
+    numPaths = 100 # Number of paths per pair of walk parameters
+    pathLength =  16000 * (random(numPaths) - 0.5) + 25000 # bp in walk
+    linDensity = arange(10, 110, 20)  # bp / nm
+    persisLength = arange(10, 210, 20) # nm
+    segConvFactor = 25 / min(persisLength) # segments / min persisLen
+    nameDB = 'rw_' + dateStr
+
+    tic = time.clock()
+    myCollector = WLCCollector(numPaths,
+
+                               pathLength,
+                               linDensity,
+                               persisLength,
+                               segConvFactor,
+                               nameDB)
+    toc = time.clock()
+    print('Total processing time: %f' % (toc - tic))
+
+    myDB = NPDB.NumPyDB_pickle(nameDB, mode = 'load')
+    importData = myDB.load('c=100.0, lp=100.0')
+    myHist = importData[0][0]
+    myBins = importData[0][1]
+    binWidth = importData[0][2]
+    Rg = importData[0][3][:, newaxis]
+    Rg_plot = linspace(min(Rg) - 20, max(Rg) + 20, 1000)[:, newaxis]
+        
+    grid = GridSearchCV(KernelDensity(),
+                        {'bandwidth' : linspace(1, 5, 50)},
+                        cv = 20)
+    grid.fit(Rg)
+    print('Best bandwidth: %r' % grid.best_params_)
+
+    kde = KernelDensity(kernel = 'gaussian', bandwidth = grid.best_params_['bandwidth']).fit(Rg)
+    log_dens = kde.score_samples(Rg_plot)
+     
+    fig, ax = plt.subplots(2,1, sharex = True, sharey = True)
+    ax[0].hist(Rg, len(myBins - 1), normed = True)
+    ax[1].fill(Rg_plot, exp(log_dens), fc='#AAAAFF')
+    plt.show()"""
