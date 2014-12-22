@@ -14,6 +14,52 @@ from sklearn.grid_search import GridSearchCV
 
 np.seterr(divide='raise')
 
+def computeRg(path):
+    """Compute the radius of gyration of a path.
+
+    computeRg() calculates the radius of gyration of a Path
+    object. The Rg is returned as a single number.
+
+    Parameters
+    ----------
+    path : Array fo floats
+        This is a random walk path. The radius of gyration is computed
+        from the endpoints of its individual segments.
+
+    Returns
+    -------
+    Rg : float
+        The radius of gyration of the path object.
+
+    """
+    secondMoments = np.var(path, axis = 0)
+    Rg = (np.sum(secondMoments)) ** (0.5)
+
+    return Rg
+
+def bumpPoints(path, locPrecision):
+        """Bumps the points in a random direction in 3D.
+
+        Parameters
+        ----------
+        locPrecision : float
+            The localization precision of the measurement. This is the
+            standard deviation of the Gaussian distribution
+            determining the bump distances.
+
+        Returns
+        -------
+        bumpedPath : Path object instance
+            A shallow copy of this Path instance, but with the x-,y-,
+            and z-coordinates of the path field bumped in random
+            directions.
+
+        """
+        rows, cols = path.shape
+        bumpedPath = locPrecision * np.random.randn(rows, cols) + path
+
+        return bumpedPath
+
 def loadModel(dbName):
     """Loads a model polymer by reading the database generated from
     the polymer simulation.
@@ -94,7 +140,9 @@ def computeSingleLLH_KDE(probFunc, data):
 
     """
     # Add an axis so scikit-learn functions can operate on the data
-    Rg = probFunc[3][:, np.newaxis]
+    #Rg = probFunc[3][:, np.newaxis]
+    # This works on the bumped data, not the polymer ground truth Rg.
+    Rg = probFunc[4][:, np.newaxis]
     data = data[:, np.newaxis]
 
     # The following is used to estimate the bandwidth, but it's very
@@ -197,6 +245,30 @@ def sortLLH(dataPoint, index, binLength, hist):
 
 if __name__ == '__main__':
     dataFName = 'saved_distrs/Original_Data_L_dataset_RgTrans.txt'
-    dbName = 'rw_2014-12-19'
+    dbName = 'rw_2014-12-22'
 
     llh = computeLLH(dbName, dataFName)
+
+    import matplotlib.pyplot as plt
+
+    # Unpack the data structured array
+    c = llh['f0']
+    lp = llh['f1']
+
+    # Reshape the variables to make a square grid
+    c = np.unique(c)
+    lp = np.unique(lp)
+    C, LP = np.meshgrid(c,lp)
+
+    L = np.sort(llh, order='f1').reshape(C.shape)
+    LLH = L['f2']
+
+    isolevels = -np.logspace(6, 4, 15)
+    plt.figure()
+    CS = plt.contour(c, lp, LLH, levels = isolevels)
+    plt.clabel(CS, inline=1, fontsize=10)
+    plt.title('Parameter space')
+    plt.xlabel('Packing density, bp/nm')
+    plt.ylabel('Persistence length, nm')
+
+    

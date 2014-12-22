@@ -3,7 +3,7 @@
 """
 
 __author__ = 'Kyle M. Douglass'
-__version__ = '0.3'
+__version__ = '0.4'
 __email__ = 'kyle.douglass@epfl.ch'
 
 from math import modf
@@ -14,12 +14,14 @@ from numpy import histogram, exp, mean, ceil, arange, digitize, log
 from numpy import fromiter, newaxis, linspace
 from numpy import float as npFloat
 from numpy.random import randn, random
-from scipy.linalg import norm
+from numpy.linalg import norm
 from sklearn.neighbors import KernelDensity
 from sklearn.grid_search import GridSearchCV
 import NumPyDB as NPDB
 from datetime import datetime
 import time
+
+from rw_helpers import computeRg, bumpPoints
 
 from scipy.linalg import get_blas_funcs
 # Import nrm2 from FortranBLAS library optimized for vectors.
@@ -33,7 +35,7 @@ month = currentTime.month
 day = currentTime.day
 dateStr = "%s-%s-%s" % (year, month, day)
 
-class Path():             
+class Path():
     def _randPointSphere(self, numPoints):
         """Randomly select points from the surface of a sphere.
     
@@ -185,6 +187,8 @@ class WormlikeChain(Path):
         workingPath[0, :] = currPoint
         for ctr in range(len(tanPlaneDisp)):
             # Create a displacement in the plane tangent to currPoint
+            # (Hard coding the cross product is faster than numpy's
+            # implementation for only two vectors.)
             crossX = ((currPoint[1] * randVecs[2,ctr]) - \
                        (currPoint[2] * randVecs[1,ctr]))
             crossY = ((currPoint[2] * randVecs[0,ctr]) - \
@@ -214,26 +218,21 @@ class WormlikeChain(Path):
 
         # Add up the vectors in path to create the polymer
         self.path = cumsum(workingPath, axis = 0)
-
-    def computeRg(self):
+        
+    def computeRg(self, *args):
         """Compute the radius of gyration of a path.
 
-        computeRg() calculates the radius of gyration of a Path object
-        and assigns it to a field within the same Path object.
+        computeRg() calculates the radius of gyration of a Path
+        object. The Rg is returned as single number.
 
         """
-        pathShape = self.path.shape
-        if pathShape[1] != 2 and pathShape[1] != 3:
-            errorStr = dedent('''
-            Error: Path array has %d columns.
-            A path must have either 2 or 3 columns.
-            For 2D walks, the columns are the x and y coordinates.
-            For 3D walks, the columns are the x, y, and z coordinates.
-            ''' % pathShape[1])
+        if args:
+            # Calculate the gyration radius for the provided dataset
+            path2Analyze = args[0]
+        else:
+            path2Analyze = self.path
             
-            raise SizeException(errorStr)
-
-        secondMoments = var(self.path, axis = 0)
+        secondMoments = var(path2Analyze, axis = 0)
         Rg = (sum(secondMoments)) ** (0.5)
 
         return Rg
@@ -251,7 +250,7 @@ class WormlikeChain(Path):
         self._makePath()
 
         # Ensure the path field will work with other objects.
-        self._checkPath()
+        self._checkPath()        
 
 class Analyzer():
     """Analyzes histograms of polymer paths.
@@ -297,91 +296,6 @@ class Analyzer():
 
         meanRg = sum(binCenters * myHist * binWidth)
         return meanRg
-
-    def computeLLH(self, probFunc, data):
-        """Compute the log-likelihood of a given dataset.
-
-        computeLLH(self) determines the log-likelihood of a dataset
-        given a probability mass function for an experiment.
-
-        Parameters
-        ----------
-        probFunc : tuple of numpy arrays of floats
-
-            A tuple of two numpy arrays. One array represents the
-            normalized probability assigned to a bin and the other
-            array represents the bin edges. The bin array must be one
-            element larger than the probability array.
-        data : array of floats
-            The data array.
-
-        Returns
-        -------
-        llh : float
-            The log-likelihood for the dataset.
-        """
-        try:
-            if len(probFunc[0]) == len(probFunc[1]) + 1:
-                bins = probFunc[0]
-                prob = probFunc[1]
-            elif len(probFunc[1]) == len(probFunc[0]) + 1:
-                bins = probFunc[1]
-                prob = probFunc[0]
-            else:
-                raise SizeException
-            
-        except TypeError:
-            print('TypeError')
-            print('probFunc must be a tuple containing two arrays.')
-            
-        except SizeException:
-            errorStr = dedent('''
-                Length of probFunc[0]: %r
-                Length of probFunc[1]: %r
-
-                One of these values must be one greater than the
-                other.
-                '''
-                % (len(probFunc[0]), len(probFunc[1])))
-
-            print('SizeException')
-            print(errorStr)
-            
-        except:
-            errorStr = dedent('''
-            Unexpected error occurred. The arguments to computeLLH()
-            may be of incorrect type.''')
-            print(errorStr)
-
-        inds = digitize(data, bins)
-
-        # Find the probability associated with each data point given
-        # the input probability distribution/mass function
-        numDataPoints = len(data)
-        probPerPoint = [self._sortLLH(data[ctr],
-                                     inds[ctr],
-                                     len(bins),
-                                     prob) for ctr in range(numDataPoints)]
-
-        # Remove zeros from the returned array
-        probabilities = fromiter(probPerPoint, npFloat)
-        probabilities = probabilities[flatnonzero(probabilities)]
-        
-        print(log(probabilities))
-        llh = sum(log(probabilities))
-
-        return llh
-
-    def _sortLLH(self, dataPoint, index, binLength, hist):
-        """Helper function for sorting the probabilities by bins.
-        
-        """
-        if index == 0 or index == binLength:
-            probability = 0
-        else:
-            probability = hist[index -1]
-
-        return probability
 
     def WLCRg(self, c, Lp, N):
 
@@ -495,9 +409,9 @@ class WLCCollector(Collector):
     segConvFactor : float (optional)
         Conversion factor between the user units and path segments
         (Default is 1)
-    myAnalyzer : Analyzer
-        The analyzer for computing the random walk statistics.
-        (Default analyzer does not filter out any walks.)
+    locPrecision : float (optional)
+        Standard deviation of the Gaussian defining the effective
+        system PSF. (Default is 0, meaning no bumps are made)
 
     """
     def __init__(self,
@@ -506,10 +420,15 @@ class WLCCollector(Collector):
                  linDensity,
                  persisLength,
                  segConvFactor = 1,
-                 nameDB = 'rw_' + dateStr):
+                 nameDB = 'rw_' + dateStr,
+                 locPrecision = 0):
         super().__init__(numPaths, pathLength, segConvFactor, nameDB)
+
+        # Convert from user-defined units to simulation units
         self._linDensity = self._convSegments(linDensity, False)
         self._persisLength = self._convSegments(persisLength, True)
+        self._locPrecision = self._convSegments(locPrecision, True)
+
         self.__pathLength = pathLength
 
         self._startCollector()
@@ -535,16 +454,17 @@ class WLCCollector(Collector):
 
             # Main loop for creating paths
             Rg = zeros(numPaths)
+            if self._locPrecision != 0:
+                RgBump = zeros(numPaths)
             for ctr in range(self.numPaths):
                 self._myPath.numSegments = numSegments[ctr]
                 self._myPath.pLength = lp
                 self._myPath.makeNewPath()
 
-                # Analyze the new path for its statistics
-                #if hasattr(self, '_myAnalyzer'):
-                #    currRg = self._myAnalyzer.computeRg(self._myPath)
-                #    Rg[ctr] = currRg
-                Rg[ctr] = self._myPath.computeRg()
+                Rg[ctr] = computeRg(self._myPath.path)
+                if self._locPrecision != 0:
+                    bumpedPath = bumpPoints(self._myPath.path, self._locPrecision)
+                    RgBump[ctr] = computeRg(bumpedPath)
 
             """=======================================================
             Possibly move everything below here to a function for
@@ -555,6 +475,8 @@ class WLCCollector(Collector):
             c = self._convSegments(c, True)
             lp = self._convSegments(lp, False)
             Rg = self._convSegments(Rg, False)
+            if self._locPrecision != 0:
+                RgBump = self._convSegments(RgBump, False)
 
             print('Density: %r, Persistence length: %r'
                   %(c, lp))
@@ -572,7 +494,7 @@ class WLCCollector(Collector):
 
                 # Save the gyration radii histogram to the database
                 identifier = 'c=%s, lp=%s' % (c, lp)
-                myDB.dump((hist, bin_edges, binWidth, Rg), identifier)
+                myDB.dump((hist, bin_edges, binWidth, Rg, RgBump), identifier)
                 print('Mean of all path Rg\'s: %f' % mean(Rg))
             except:
                 pass
@@ -674,24 +596,28 @@ if __name__ == '__main__':
                  The mean theoretical gyration radius is %f.'''
                  % (meanSimRg, meanTheorRg)))"""
 
-    # Test case 7: Test the computed Rg's over a range of parameters
+    # Test case 7: Test the computed Rg's over a range of parameters.
+    # Used as main code for generating walks at the moment.
     from numpy import ones, append
     import matplotlib.pyplot as plt
-    numPaths = 50000 # Number of paths per pair of walk parameters
+    numPaths = 1000 # Number of paths per pair of walk parameters
     pathLength =  16000 * (random(numPaths) - 0.5) + 25000 # bp in walk
     linDensity = arange(10, 110, 20)  # bp / nm
     persisLength = arange(10, 210, 20) # nm
+    #linDensity = array([100])
+    #persisLength = array([100])
     segConvFactor = 25 / min(persisLength) # segments / min persisLen
     nameDB = 'rw_' + dateStr
+    locPrecision = 10 # nm
 
     tic = time.clock()
     myCollector = WLCCollector(numPaths,
-
                                pathLength,
                                linDensity,
                                persisLength,
                                segConvFactor,
-                               nameDB)
+                               nameDB,
+                               locPrecision)
     toc = time.clock()
     print('Total processing time: %f' % (toc - tic))
     
@@ -798,4 +724,19 @@ if __name__ == '__main__':
     fig, ax = plt.subplots(2,1, sharex = True, sharey = True)
     ax[0].hist(Rg, len(myBins - 1), normed = True)
     ax[1].fill(Rg_plot, exp(log_dens), fc='#AAAAFF')
+    plt.show()"""
+
+    # Test case 11: Test bumping path points
+    """import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+
+    numSegments, pLength = 200, 25
+    myChain = WormlikeChain(numSegments, pLength)
+    path = myChain.path
+    bumpedPath = bumpPoints(path, 5)
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot(path[:,0], path[:,1], path[:,2], linewidth = 2.0)
+    ax.plot(bumpedPath[:,0], bumpedPath[:,1], bumpedPath[:,2], 'go', alpha = 0.5)
     plt.show()"""
