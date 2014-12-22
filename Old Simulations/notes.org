@@ -1,0 +1,20 @@
+#+TITLE: Key to Simulation Datasets
+
+* rw_2014-12-19
+numPaths = 50000 # Number of paths per pair of walk parameters
+pathLength =  16000 * (random(numPaths) - 0.5) + 25000 # bp in walk
+linDensity = arange(10, 110, 20)  # bp / nm
+persisLength = arange(10, 210, 20) # nm
+segConvFactor = 25 / min(persisLength) # segments / min persisLen
+nameDB = 'rw_' + dateStr
+
+tic = time.clock()
+myCollector = WLCCollector(numPaths,
+
+			   pathLength,
+			   linDensity,
+			   persisLength,
+			   segConvFactor,
+			   nameDB)
+toc = time.clock()
+print('Total processing time: %f' % (toc - tic))
