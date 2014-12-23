@@ -454,8 +454,7 @@ class WLCCollector(Collector):
 
             # Main loop for creating paths
             Rg = zeros(numPaths)
-            if self._locPrecision != 0:
-                RgBump = zeros(numPaths)
+            RgBump = zeros(numPaths)
             for ctr in range(self.numPaths):
                 self._myPath.numSegments = numSegments[ctr]
                 self._myPath.pLength = lp
@@ -469,6 +468,10 @@ class WLCCollector(Collector):
             """=======================================================
             Possibly move everything below here to a function for
             organizational purposes and clarity.
+
+            This is code for writing to a pickled database for
+            analyzing the data later.
+
             """
                 
             # Convert back to user-defined units
@@ -482,22 +485,12 @@ class WLCCollector(Collector):
                   %(c, lp))
 
             try:
-                # Create histogram of Rg data
-                stdRg = var(Rg) ** (0.5)
-                numRg = len(Rg)
-                '''The following is from Scott, Biometrika 66, 605 (1979)
-
-                '''
-                binWidth = 3.49 * stdRg * numRg ** (-1/3)
-                numBins = ceil((max(Rg) - min(Rg)) / binWidth)
-                hist, bin_edges = histogram(Rg, numBins, density = True)
-
                 # Save the gyration radii histogram to the database
                 identifier = 'c=%s, lp=%s' % (c, lp)
-                myDB.dump((hist, bin_edges, binWidth, Rg, RgBump), identifier)
+                myDB.dump((Rg, RgBump), identifier)
                 print('Mean of all path Rg\'s: %f' % mean(Rg))
             except:
-                pass
+                print('A problem occurred while saving the data.')
 
 class SizeException(Exception):
     pass
@@ -600,7 +593,7 @@ if __name__ == '__main__':
     # Used as main code for generating walks at the moment.
     from numpy import ones, append
     import matplotlib.pyplot as plt
-    numPaths = 1000 # Number of paths per pair of walk parameters
+    numPaths = 100 # Number of paths per pair of walk parameters
     pathLength =  16000 * (random(numPaths) - 0.5) + 25000 # bp in walk
     linDensity = arange(10, 110, 20)  # bp / nm
     persisLength = arange(10, 210, 20) # nm

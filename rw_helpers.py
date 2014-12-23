@@ -92,7 +92,7 @@ def loadModel(dbName):
 
     return simResults
 
-def computeLLH(dbName, dataFName):
+def computeLLH(dbName, dataFName, bump = True):
     """Computes the log-likelihood of all simulated parameters.
 
     computeLLH computes the log-likelihood for all the simulated
@@ -100,6 +100,15 @@ def computeLLH(dbName, dataFName):
     other functions and is intended to be an ease-of-use utility for
     processing full experiments.
 
+    Parameters
+    ----------
+    dbName : string
+        Name of the database to load the simulated ata from.
+    dataFName : string
+        Name of file containing the radii of gyration data.
+    bump : boolean (optional)
+        Use the bumped or unbumped data in the ML reconstruction?
+        (Default is True)
     """
     simResults = loadModel(dbName)
     data = np.loadtxt(dataFName)
@@ -108,8 +117,13 @@ def computeLLH(dbName, dataFName):
     llhLandscape = np.zeros((len(simResults),), dtype=('f4,f4,f4'))
     
     for ctr, key in enumerate(simResults):
-        #llh = computeSingleLLH(simResults[key], data)
-        llh = computeSingleLLH_KDE(simResults[key], data)
+        # Use bumped data or unbumped data?
+        if bump:
+            simRg = simResults[key][1]
+        else:
+            simRg = simResults[key][0]
+            
+        llh = computeSingleLLH_KDE(simRg, data)
         c, lp = key
 
         # llhLandscape is a structured numpy array.
@@ -117,7 +131,7 @@ def computeLLH(dbName, dataFName):
 
     return llhLandscape
 
-def computeSingleLLH_KDE(probFunc, data):
+def computeSingleLLH_KDE(simData, expData):
     """Compute the log-likelihood of a given dataset use KDE.
 
     computeSingleLLH_KDE determines the log-likelihood of a dataset
@@ -127,11 +141,11 @@ def computeSingleLLH_KDE(probFunc, data):
 
     Parameters
     ----------
-    probFunc : tuple of numpy arrays of floats
-        A tuple at least 4 elements, the last being the complete
-        simulated dataset..
-    data : array of floats
-        The data array.
+    simData : numpy array of floats
+        The simulated data array. This should be a one-dimensional
+        array.
+    expData : array of floats
+        The experimental data array.
 
     Returns
     -------
@@ -140,10 +154,8 @@ def computeSingleLLH_KDE(probFunc, data):
 
     """
     # Add an axis so scikit-learn functions can operate on the data
-    #Rg = probFunc[3][:, np.newaxis]
-    # This works on the bumped data, not the polymer ground truth Rg.
-    Rg = probFunc[4][:, np.newaxis]
-    data = data[:, np.newaxis]
+    Rg = simData[:, np.newaxis]
+    data = expData[:, np.newaxis]
 
     # The following is used to estimate the bandwidth, but it's very
     # slow.
@@ -158,75 +170,6 @@ def computeSingleLLH_KDE(probFunc, data):
     log_dens = kde.score_samples(data)
 
     return sum(log_dens)
-
-def computeSingleLLH(probFunc, data):
-    """Compute the log-likelihood of a given dataset.
-
-    computeSingleLLH determines the log-likelihood of a dataset
-    given a probability mass function for an experiment.
-
-    Parameters
-    ----------
-    probFunc : tuple of numpy arrays of floats
-
-        A tuple of two numpy arrays. One array represents the
-        normalized probability assigned to a bin and the other
-        array represents the bin edges. The bin array must be one
-        element larger than the probability array.
-    data : array of floats
-        The data array.
-
-    Returns
-    -------
-    llh : float
-        The log-likelihood for the dataset.
-    """
-    try:
-        if len(probFunc[0]) == len(probFunc[1]) + 1:
-            bins = probFunc[0]
-            prob = probFunc[1]
-        elif len(probFunc[1]) == len(probFunc[0]) + 1:
-            bins = probFunc[1]
-            prob = probFunc[0]
-        else:
-            raise SizeException
-
-    except TypeError:
-        print('TypeError')
-        print('probFunc must be a tuple containing two arrays.')
-
-    except SizeException:
-        errorStr = dedent('''
-            SizeException
-            Length of probFunc[0]: %r
-            Length of probFunc[1]: %r
-
-            One of these values must be one greater than the
-            other.
-            '''
-            % (len(probFunc[0]), len(probFunc[1])))
-
-        print(errorStr)
-
-    inds = np.digitize(data, bins)
-
-    # Find the probability associated with each data point given
-    # the input probability distribution/mass function
-    numDataPoints = len(data)
-    probPerPoint = [sortLLH(data[ctr], inds[ctr], len(bins), prob) \
-                    for ctr in range(numDataPoints)]
-
-    # Remove zeros from the returned array
-    probabilities = np.fromiter(probPerPoint, np.float)
-    #probabilities = probabilities[np.flatnonzero(probabilities)]
-
-    try:
-        llh = np.sum(np.log(probabilities))
-    except: 
-        sys.exit('0 found in probabilities.')
-
-    return llh
-
 
 def sortLLH(dataPoint, index, binLength, hist):
     """Helper function for sorting the probabilities by bins.
@@ -245,7 +188,7 @@ def sortLLH(dataPoint, index, binLength, hist):
 
 if __name__ == '__main__':
     dataFName = 'saved_distrs/Original_Data_L_dataset_RgTrans.txt'
-    dbName = 'rw_2014-12-22'
+    dbName = 'rw_2014-12-23'
 
     llh = computeLLH(dbName, dataFName)
 
@@ -270,5 +213,6 @@ if __name__ == '__main__':
     plt.title('Parameter space')
     plt.xlabel('Packing density, bp/nm')
     plt.ylabel('Persistence length, nm')
+    plt.show()
 
     
