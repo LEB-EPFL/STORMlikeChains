@@ -20,7 +20,7 @@ from sklearn.grid_search import GridSearchCV
 import NumPyDB as NPDB
 from datetime import datetime
 import time
-
+import multiprocessing
 from rw_helpers import computeRg, bumpPoints
 
 from scipy.linalg import get_blas_funcs
@@ -441,30 +441,34 @@ class WLCCollector(Collector):
                                             self._persisLength)
 
         myDB = NPDB.NumPyDB_pickle(self._nameDB)
-        
-        # Loop over all combinations of density and persistence length
+
+        myChains = []
+        # Create a list of chains, one for each parameter-pair value
         for c, lp in zip(linDensity.flatten(),
                          persisLength.flatten()):
 
+            # This is an array of (in general) different values
             numSegments = self.__pathLength / c
             
-            # Does the collector already have a path object?
-            if not hasattr(self, '_myPath'):
-                self._myPath = WormlikeChain(numSegments[0], lp)
+            # Create new WormlikeChain instance and add it to the list
+            myChain = WormlikeChain(numSegments[0], lp)
+            myChains.append({'chain' : myChain,
+                             'numSegments' : numSegments,
+                             'locPrecision' : self._locPrecision})
 
-            # Main loop for creating paths
-            Rg = zeros(numPaths)
-            RgBump = zeros(numPaths)
-            for ctr in range(self.numPaths):
-                self._myPath.numSegments = numSegments[ctr]
-                self._myPath.pLength = lp
-                self._myPath.makeNewPath()
+        # Compute the gyration radii for all the parameter pairs
+        pool = multiprocessing.Pool()
+        RgData = pool.map(parSimChain, myChains)
 
-                Rg[ctr] = computeRg(self._myPath.path)
-                if self._locPrecision != 0:
-                    bumpedPath = bumpPoints(self._myPath.path, self._locPrecision)
-                    RgBump[ctr] = computeRg(bumpedPath)
+        # Unpack the gyration radii and save them to the database
+        for ctr, (c, lp) in enumerate(zip(linDensity.flatten(),
+                                          persisLength.flatten())):
 
+            # Unpack the computed RgData
+            currRgData = RgData[ctr]
+            Rg = currRgData['Rg']
+            RgBump = currRgData['RgBump']
+        
             """=======================================================
             Possibly move everything below here to a function for
             organizational purposes and clarity.
@@ -473,7 +477,7 @@ class WLCCollector(Collector):
             analyzing the data later.
 
             """
-                
+
             # Convert back to user-defined units
             c = self._convSegments(c, True)
             lp = self._convSegments(lp, False)
@@ -491,6 +495,27 @@ class WLCCollector(Collector):
                 print('Mean of all path Rg\'s: %f' % mean(Rg))
             except:
                 print('A problem occurred while saving the data.')
+
+def parSimChain(data):
+    chain = data['chain']
+    numSegments = data['numSegments']
+    locPrecision = data['locPrecision']
+
+    numPaths = len(numSegments)
+    
+    Rg = zeros(numPaths)
+    RgBump = zeros(numPaths)
+    for ctr in range(numPaths):
+        chain.numSegments = numSegments[ctr]
+        chain.makeNewPath()
+
+        Rg[ctr] = computeRg(chain.path)
+        if locPrecision != 0:
+            bumpedPath = bumpPoints(chain.path, locPrecision)
+            RgBump[ctr] = computeRg(bumpedPath)
+
+    return {'Rg' : Rg, 'RgBump' : RgBump}
+    
 
 class SizeException(Exception):
     pass
@@ -591,7 +616,7 @@ if __name__ == '__main__':
 
     # Test case 7: Test the computed Rg's over a range of parameters.
     # Used as main code for generating walks at the moment.
-    from numpy import ones, append
+    """from numpy import ones, append
     import matplotlib.pyplot as plt
     numPaths = 100 # Number of paths per pair of walk parameters
     pathLength =  16000 * (random(numPaths) - 0.5) + 25000 # bp in walk
@@ -614,7 +639,7 @@ if __name__ == '__main__':
     toc = time.clock()
     print('Total processing time: %f' % (toc - tic))
     
-    """myAnalyzer = Analyzer(nameDB)
+    myAnalyzer = Analyzer(nameDB)
 
     c, lp = meshgrid(linDensity, persisLength)
     errorRg = array([])
@@ -733,3 +758,27 @@ if __name__ == '__main__':
     ax.plot(path[:,0], path[:,1], path[:,2], linewidth = 2.0)
     ax.plot(bumpedPath[:,0], bumpedPath[:,1], bumpedPath[:,2], 'go', alpha = 0.5)
     plt.show()"""
+
+    # Test case 12: Test parallel collector
+    from numpy import ones, append
+    import matplotlib.pyplot as plt
+    numPaths = 100 # Number of paths per pair of walk parameters
+    pathLength =  16000 * (random(numPaths) - 0.5) + 25000 # bp in walk
+    linDensity = arange(10, 110, 20)  # bp / nm
+    persisLength = arange(10, 210, 20) # nm
+    #linDensity = array([100])
+    #persisLength = array([100])
+    segConvFactor = 25 / min(persisLength) # segments / min persisLen
+    nameDB = 'rw_' + dateStr
+    locPrecision = 10 # nm
+
+    tic = time.clock()
+    myCollector = WLCCollector(numPaths,
+                               pathLength,
+                               linDensity,
+                               persisLength,
+                               segConvFactor,
+                               nameDB,
+                               locPrecision)
+    toc = time.clock()
+    print('Total processing time: %f' % (toc - tic))
