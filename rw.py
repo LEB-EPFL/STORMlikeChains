@@ -444,6 +444,7 @@ class WLCCollector(Collector):
 
         myChains = []
         # Create a list of chains, one for each parameter-pair value
+        # Each chain will be run independently on different cores
         for c, lp in zip(linDensity.flatten(),
                          persisLength.flatten()):
 
@@ -459,6 +460,7 @@ class WLCCollector(Collector):
         # Compute the gyration radii for all the parameter pairs
         pool = multiprocessing.Pool()
         RgData = pool.map(parSimChain, myChains)
+        pool.close(); pool.join()
 
         # Unpack the gyration radii and save them to the database
         for ctr, (c, lp) in enumerate(zip(linDensity.flatten(),
@@ -469,15 +471,6 @@ class WLCCollector(Collector):
             Rg = currRgData['Rg']
             RgBump = currRgData['RgBump']
         
-            """=======================================================
-            Possibly move everything below here to a function for
-            organizational purposes and clarity.
-
-            This is code for writing to a pickled database for
-            analyzing the data later.
-
-            """
-
             # Convert back to user-defined units
             c = self._convSegments(c, True)
             lp = self._convSegments(lp, False)
@@ -497,6 +490,30 @@ class WLCCollector(Collector):
                 print('A problem occurred while saving the data.')
 
 def parSimChain(data):
+    """Primary processing for-loop to be parallelized.
+
+    parSimChain(data) is the most intensive part of the simulation. It
+    is a function applied to a WormlikeChain instance and repeatedly
+    calculates new conformations and gyration radii for those
+    conformations. Each WormlikeChain instance was defined with a
+    different persistence length.
+
+    Parameters
+    ----------
+    data : dictionary
+        The data dictionary contains chain, numSegments and
+        locPrecision keys. The chain is the WormlikeChain instance and
+        the numSegments array contains the number of segments to
+        simulate for each chain iteration. locPrecision is the
+        localization precision used for bumping the chain locations.
+
+    Returns
+    -------
+    RgDict : dictionary
+        Dictionary with Rg and RgBump keys containing the gyration
+        radii for the chain and its sampled version.
+    """
+    
     chain = data['chain']
     numSegments = data['numSegments']
     locPrecision = data['locPrecision']
@@ -514,14 +531,15 @@ def parSimChain(data):
             bumpedPath = bumpPoints(chain.path, locPrecision)
             RgBump[ctr] = computeRg(bumpedPath)
 
-    return {'Rg' : Rg, 'RgBump' : RgBump}
+    RgDict = {'Rg' : Rg, 'RgBump' : RgBump}
+    return RgDict
     
-
 class SizeException(Exception):
     pass
             
 if __name__ == '__main__':
     # Test case 1: test sphere sampling
+
     """import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
 
