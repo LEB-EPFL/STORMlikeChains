@@ -790,7 +790,7 @@ if __name__ == '__main__':
     nameDB = 'rw_' + dateStr
     locPrecision = 10 # nm
 
-    tic = time.clock()
+    tic = time.time()
     myCollector = WLCCollector(numPaths,
                                pathLength,
                                linDensity,
@@ -798,5 +798,5 @@ if __name__ == '__main__':
                                segConvFactor,
                                nameDB,
                                locPrecision)
-    toc = time.clock()
+    toc = time.time()
     print('Total processing time: %f' % (toc - tic))
