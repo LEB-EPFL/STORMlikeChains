@@ -1,9 +1,9 @@
-"""Classes for simulating random walks in three dimensions.
+"""Classes for simulating random walk models for polymer physics.
 
 """
 
 __author__ = 'Kyle M. Douglass'
-__version__ = '0.4'
+__version__ = '0.5'
 __email__ = 'kyle.douglass@epfl.ch'
 
 from math import modf
@@ -219,24 +219,6 @@ class WormlikeChain(Path):
         # Add up the vectors in path to create the polymer
         self.path = cumsum(workingPath, axis = 0)
         
-    def computeRg(self, *args):
-        """Compute the radius of gyration of a path.
-
-        computeRg() calculates the radius of gyration of a Path
-        object. The Rg is returned as single number.
-
-        """
-        if args:
-            # Calculate the gyration radius for the provided dataset
-            path2Analyze = args[0]
-        else:
-            path2Analyze = self.path
-            
-        secondMoments = var(path2Analyze, axis = 0)
-        Rg = (sum(secondMoments)) ** (0.5)
-
-        return Rg
-
     def makeNewPath(self, initPoint = array([1, 0, 0])):
         """Clears current path and makes a new one.
 
@@ -251,79 +233,6 @@ class WormlikeChain(Path):
 
         # Ensure the path field will work with other objects.
         self._checkPath()        
-
-class Analyzer():
-    """Analyzes histograms of polymer paths.
-
-    Parameters
-    ----------
-    dbName : str
-        The name of the pickle database that contains the histogram
-        data.
-
-    Attributes
-    ----------
-    myDB : NumPyDB_pickle object
-        Object for writing and loading radius of gyration histograms.
-        
-    """
-    def __init__(self, dbName):
-        self.dbName = dbName
-        self._myDB = NPDB.NumPyDB_pickle(dbName, mode = 'load')
-
-    def computeMeanRg(self, identifier):
-        """Compute the mean radius of gyration from histogram data.
-
-        Parameters
-        ----------
-        identifier : str
-            String identifier for which dataset to import.
-
-        Returns
-        -------
-        meanRg : float
-            The mean radius of gyration determined from the histogram.
-
-        """
-        importData = self._myDB.load(identifier)
-        myHist = importData[0][0]
-        myBins = importData[0][1]
-        binWidth = importData[0][2]
-
-        # Find the centers of each histogram bin
-        binCenters = myBins + binWidth / 2
-        binCenters = binCenters[0:-1]
-
-        meanRg = sum(binCenters * myHist * binWidth)
-        return meanRg
-
-    def WLCRg(self, c, Lp, N):
-
-        """Return the theoretical value for the gyration radius.
-
-        Parameters
-        ----------
-        c : float
-            The linear density of base pairs in the chain.
-        Lp : float
-            The persistence length of the wormlike chain.
-        N : float
-            The number of base pairs in the chain.
-
-        Returns
-        -------
-        meanRg : float 
-           The mean gyration radius of a theoretical wormlike chain.
-        """
-
-        Rg2 = (Lp * N / c) / 3 - \
-                 Lp ** 2 + \
-                 2 * Lp ** 3 / (N / c) ** 2 * \
-                 ((N / c) - Lp * (1 - exp(- (N / c)/ Lp)))
-
-        meanRg = Rg2 ** 0.5
-
-        return meanRg
 
 class Collector():
     """Creates random walk paths and collects their statistics.
@@ -791,7 +700,7 @@ if __name__ == '__main__':
     nameDB = 'rw_' + dateStr
     locPrecision = 10 # nm
 
-    """tic = time.time()
+    tic = time.time()
     myCollector = WLCCollector(numPaths,
                                pathLength,
                                linDensity,
@@ -800,7 +709,7 @@ if __name__ == '__main__':
                                nameDB,
                                locPrecision)
     toc = time.time()
-    print('Total processing time: %f' % (toc - tic))"""
+    print('Total processing time: %f' % (toc - tic))
 
     c, lp = meshgrid(linDensity, persisLength)
     errorRg = array([])
