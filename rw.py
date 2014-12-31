@@ -21,7 +21,7 @@ import NumPyDB as NPDB
 from datetime import datetime
 import time
 import multiprocessing
-from rw_helpers import computeRg, bumpPoints
+from rw_helpers import computeRg, bumpPoints, WLCRg, loadModel
 
 from scipy.linalg import get_blas_funcs
 # Import nrm2 from FortranBLAS library optimized for vectors.
@@ -781,7 +781,8 @@ if __name__ == '__main__':
     from numpy import ones, append
     import matplotlib.pyplot as plt
     numPaths = 100 # Number of paths per pair of walk parameters
-    pathLength =  16000 * (random(numPaths) - 0.5) + 25000 # bp in walk
+    #pathLength =  16000 * (random(numPaths) - 0.5) + 25000 # bp in walk
+    pathLength = 25000 * ones(numPaths)
     linDensity = arange(10, 110, 20)  # bp / nm
     persisLength = arange(10, 210, 20) # nm
     #linDensity = array([100])
@@ -790,7 +791,7 @@ if __name__ == '__main__':
     nameDB = 'rw_' + dateStr
     locPrecision = 10 # nm
 
-    tic = time.time()
+    """tic = time.time()
     myCollector = WLCCollector(numPaths,
                                pathLength,
                                linDensity,
@@ -799,4 +800,19 @@ if __name__ == '__main__':
                                nameDB,
                                locPrecision)
     toc = time.time()
-    print('Total processing time: %f' % (toc - tic))
+    print('Total processing time: %f' % (toc - tic))"""
+
+    c, lp = meshgrid(linDensity, persisLength)
+    errorRg = array([])
+    simResults = loadModel(nameDB)
+
+    for key in simResults:
+        Rg = simResults[key][0]
+        c, lp = key
+        RgTheory = WLCRg(c, lp, pathLength[0])
+
+        print(dedent('''
+                     c=%0.1f, lp=%0.1f
+                     The mean of the simulated distribution is %f.
+                     The mean theoretical gyration radius is %f.'''
+                     % (c, lp, mean(Rg), RgTheory)))
