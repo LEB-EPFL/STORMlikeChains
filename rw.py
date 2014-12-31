@@ -323,14 +323,29 @@ class WLCCollector(Collector):
         system PSF. (Default is 0, meaning no bumps are made)
 
     """
-    def __init__(self,
-                 numPaths,
-                 pathLength,
-                 linDensity,
-                 persisLength,
-                 segConvFactor = 1,
-                 nameDB = 'rw_' + dateStr,
-                 locPrecision = 0):
+    def __init__(self, **kwargs):
+
+        # Unpack the arguments
+        numPaths = kwargs['numPaths']
+        pathLength = kwargs['pathLength']
+        linDensity = kwargs['linDensity']
+        persisLength = kwargs['persisLength']
+
+        if 'segConvFactor' in kwargs:
+            segConvFactor = kwargs['segConvFactor']
+        else:
+            segConvFactor = 1
+
+        if 'nameDB' in kwargs:
+            nameDB = kwargs['nameDB']
+        else:
+            nameDB = 'rw_' + dateStr
+
+        if 'locPrecision' in kwargs:
+            locPrecision = kwargs['locPrecision']
+        else:
+            locPrecision = 0
+        
         super().__init__(numPaths, pathLength, segConvFactor, nameDB)
 
         # Convert from user-defined units to simulation units
@@ -689,36 +704,29 @@ if __name__ == '__main__':
     # Test case 12: Test parallel collector
     from numpy import ones, append
     import matplotlib.pyplot as plt
-    numPaths = 100 # Number of paths per pair of walk parameters
+    kwargs = {}
+    kwargs['numPaths'] = 100 # Number of paths per pair of walk parameters
     #pathLength =  16000 * (random(numPaths) - 0.5) + 25000 # bp in walk
-    pathLength = 25000 * ones(numPaths)
-    linDensity = arange(10, 110, 20)  # bp / nm
-    persisLength = arange(10, 210, 20) # nm
+    kwargs['pathLength'] = 25000 * ones(kwargs['numPaths'])
+    kwargs['linDensity'] = arange(10, 110, 20)  # bp / nm
+    kwargs['persisLength'] = arange(10, 210, 20) # nm
     #linDensity = array([100])
     #persisLength = array([100])
-    segConvFactor = 25 / min(persisLength) # segments / min persisLen
-    nameDB = 'rw_' + dateStr
-    locPrecision = 10 # nm
+    kwargs['segConvFactor'] = 25 / min(kwargs['persisLength']) # segments / min persisLen
+    kwargs['nameDB'] = 'rw_' + dateStr
+    kwargs['locPrecision'] = 10 # nm
 
     tic = time.time()
-    myCollector = WLCCollector(numPaths,
-                               pathLength,
-                               linDensity,
-                               persisLength,
-                               segConvFactor,
-                               nameDB,
-                               locPrecision)
+    myCollector = WLCCollector(**kwargs)
     toc = time.time()
     print('Total processing time: %f' % (toc - tic))
 
-    c, lp = meshgrid(linDensity, persisLength)
-    errorRg = array([])
-    simResults = loadModel(nameDB)
+    simResults = loadModel(kwargs['nameDB'])
 
     for key in simResults:
         Rg = simResults[key][0]
         c, lp = key
-        RgTheory = WLCRg(c, lp, pathLength[0])
+        RgTheory = WLCRg(c, lp, kwargs['pathLength'][0])
 
         print(dedent('''
                      c=%0.1f, lp=%0.1f
