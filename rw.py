@@ -703,25 +703,24 @@ if __name__ == '__main__':
 
     # Test case 12: Test parallel collector
     from numpy import ones, append
-    import matplotlib.pyplot as plt
     kwargs = {}
-    kwargs['numPaths'] = 100 # Number of paths per pair of walk parameters
-    #pathLength =  16000 * (random(numPaths) - 0.5) + 25000 # bp in walk
-    kwargs['pathLength'] = 25000 * ones(kwargs['numPaths'])
-    kwargs['linDensity'] = arange(10, 110, 20)  # bp / nm
-    kwargs['persisLength'] = arange(10, 210, 20) # nm
+    kwargs['numPaths'] = 100000 # Number of paths per pair of walk parameters
+    kwargs['pathLength'] =  13900 * (random(kwargs['numPaths']) - 0.5) + 26250 # bp in walk
+    #kwargs['pathLength'] = 25000 * ones(kwargs['numPaths'])
+    kwargs['linDensity'] = arange(20, 70, 10)  # bp / nm
+    kwargs['persisLength'] = arange(20, 110, 10) # nm
     #linDensity = array([100])
     #persisLength = array([100])
-    kwargs['segConvFactor'] = 25 / min(kwargs['persisLength']) # segments / min persisLen
+    kwargs['segConvFactor'] = 25 / 10 # segments / min persisLen
     kwargs['nameDB'] = 'rw_' + dateStr
-    kwargs['locPrecision'] = 10 # nm
+    kwargs['locPrecision'] = 2.12 # nm
 
     tic = time.time()
     myCollector = WLCCollector(**kwargs)
     toc = time.time()
     print('Total processing time: %f' % (toc - tic))
 
-    simResults = loadModel(kwargs['nameDB'])
+    """simResults = loadModel(kwargs['nameDB'])
 
     for key in simResults:
         Rg = simResults[key][0]
@@ -732,4 +731,4 @@ if __name__ == '__main__':
                      c=%0.1f, lp=%0.1f
                      The mean of the simulated distribution is %f.
                      The mean theoretical gyration radius is %f.'''
-                     % (c, lp, mean(Rg), RgTheory)))
+                     % (c, lp, mean(Rg), RgTheory)))"""

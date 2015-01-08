@@ -95,7 +95,16 @@ def loadModel(dbName):
 
     Parameters
     ----------
-    
+    dbName : string
+        Name of the NumPyDB object that contains the pickled data.
+
+    Returns
+    -------
+    simResults : dictionary
+        The results of a simulation in dictionary format. Keys denote
+        the simulation parameters. Two arrays of gyration radii belong
+        to each key; the first is for the unbumped data and the second
+        is for the bumped data.
 
     """
     myDB = NPDB.NumPyDB_pickle(dbName, mode = 'load')
