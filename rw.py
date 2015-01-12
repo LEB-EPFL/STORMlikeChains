@@ -593,15 +593,13 @@ if __name__ == '__main__':
     # Used as main code for generating walks at the moment.
     from numpy import ones, append
     import matplotlib.pyplot as plt
-    numPaths = 100 # Number of paths per pair of walk parameters
-    pathLength =  16000 * (random(numPaths) - 0.5) + 25000 # bp in walk
+    numPaths = 250000 # Number of paths per pair of walk parameters
+    pathLength =  5100 * (random(numPaths) - 0.5) + 11750 # bp in walk
     linDensity = arange(10, 110, 20)  # bp / nm
     persisLength = arange(10, 210, 20) # nm
-    #linDensity = array([100])
-    #persisLength = array([100])
     segConvFactor = 25 / min(persisLength) # segments / min persisLen
     nameDB = 'rw_' + dateStr
-    locPrecision = 10 # nm
+    locPrecision = 2.45 # nm
 
     tic = time.clock()
     myCollector = WLCCollector(numPaths,
@@ -729,7 +727,10 @@ if __name__ == '__main__':
     bumpedPath = bumpPoints(path, 5)
     
     fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
+    ax = fig.add_subplot(211, projection='3d')
     ax.plot(path[:,0], path[:,1], path[:,2], linewidth = 2.0)
-    ax.plot(bumpedPath[:,0], bumpedPath[:,1], bumpedPath[:,2], 'go', alpha = 0.5)
+    plt.title('A')
+    ax2 = fig.add_subplot(212, projection='3d')
+    ax2.plot(bumpedPath[:,0], bumpedPath[:,1], bumpedPath[:,2], 'go', alpha = 0.5)
+    plt.title('B')
     plt.show()"""

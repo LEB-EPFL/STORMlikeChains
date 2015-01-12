@@ -210,6 +210,7 @@ if __name__ == '__main__':
     plt.figure()
     CS = plt.contour(c, lp, LLH, levels = isolevels)
     plt.clabel(CS, inline=1, fontsize=10)
+    plt.scatter(C.flatten(), LP.flatten())
     plt.title('Parameter space')
     plt.xlabel('Packing density, bp/nm')
     plt.ylabel('Persistence length, nm')
