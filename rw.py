@@ -1,9 +1,9 @@
-"""Classes for simulating random walks in three dimensions.
+"""Classes for simulating random walk models for polymer physics.
 
 """
 
 __author__ = 'Kyle M. Douglass'
-__version__ = '0.4'
+__version__ = '0.5'
 __email__ = 'kyle.douglass@epfl.ch'
 
 from math import modf
@@ -20,8 +20,8 @@ from sklearn.grid_search import GridSearchCV
 import NumPyDB as NPDB
 from datetime import datetime
 import time
-
-from rw_helpers import computeRg, bumpPoints
+import multiprocessing
+from rw_helpers import computeRg, bumpPoints, WLCRg, loadModel
 
 from scipy.linalg import get_blas_funcs
 # Import nrm2 from FortranBLAS library optimized for vectors.
@@ -219,24 +219,6 @@ class WormlikeChain(Path):
         # Add up the vectors in path to create the polymer
         self.path = cumsum(workingPath, axis = 0)
         
-    def computeRg(self, *args):
-        """Compute the radius of gyration of a path.
-
-        computeRg() calculates the radius of gyration of a Path
-        object. The Rg is returned as single number.
-
-        """
-        if args:
-            # Calculate the gyration radius for the provided dataset
-            path2Analyze = args[0]
-        else:
-            path2Analyze = self.path
-            
-        secondMoments = var(path2Analyze, axis = 0)
-        Rg = (sum(secondMoments)) ** (0.5)
-
-        return Rg
-
     def makeNewPath(self, initPoint = array([1, 0, 0])):
         """Clears current path and makes a new one.
 
@@ -251,79 +233,6 @@ class WormlikeChain(Path):
 
         # Ensure the path field will work with other objects.
         self._checkPath()        
-
-class Analyzer():
-    """Analyzes histograms of polymer paths.
-
-    Parameters
-    ----------
-    dbName : str
-        The name of the pickle database that contains the histogram
-        data.
-
-    Attributes
-    ----------
-    myDB : NumPyDB_pickle object
-        Object for writing and loading radius of gyration histograms.
-        
-    """
-    def __init__(self, dbName):
-        self.dbName = dbName
-        self._myDB = NPDB.NumPyDB_pickle(dbName, mode = 'load')
-
-    def computeMeanRg(self, identifier):
-        """Compute the mean radius of gyration from histogram data.
-
-        Parameters
-        ----------
-        identifier : str
-            String identifier for which dataset to import.
-
-        Returns
-        -------
-        meanRg : float
-            The mean radius of gyration determined from the histogram.
-
-        """
-        importData = self._myDB.load(identifier)
-        myHist = importData[0][0]
-        myBins = importData[0][1]
-        binWidth = importData[0][2]
-
-        # Find the centers of each histogram bin
-        binCenters = myBins + binWidth / 2
-        binCenters = binCenters[0:-1]
-
-        meanRg = sum(binCenters * myHist * binWidth)
-        return meanRg
-
-    def WLCRg(self, c, Lp, N):
-
-        """Return the theoretical value for the gyration radius.
-
-        Parameters
-        ----------
-        c : float
-            The linear density of base pairs in the chain.
-        Lp : float
-            The persistence length of the wormlike chain.
-        N : float
-            The number of base pairs in the chain.
-
-        Returns
-        -------
-        meanRg : float 
-           The mean gyration radius of a theoretical wormlike chain.
-        """
-
-        Rg2 = (Lp * N / c) / 3 - \
-                 Lp ** 2 + \
-                 2 * Lp ** 3 / (N / c) ** 2 * \
-                 ((N / c) - Lp * (1 - exp(- (N / c)/ Lp)))
-
-        meanRg = Rg2 ** 0.5
-
-        return meanRg
 
 class Collector():
     """Creates random walk paths and collects their statistics.
@@ -414,14 +323,29 @@ class WLCCollector(Collector):
         system PSF. (Default is 0, meaning no bumps are made)
 
     """
-    def __init__(self,
-                 numPaths,
-                 pathLength,
-                 linDensity,
-                 persisLength,
-                 segConvFactor = 1,
-                 nameDB = 'rw_' + dateStr,
-                 locPrecision = 0):
+    def __init__(self, **kwargs):
+
+        # Unpack the arguments
+        numPaths = kwargs['numPaths']
+        pathLength = kwargs['pathLength']
+        linDensity = kwargs['linDensity']
+        persisLength = kwargs['persisLength']
+
+        if 'segConvFactor' in kwargs:
+            segConvFactor = kwargs['segConvFactor']
+        else:
+            segConvFactor = 1
+
+        if 'nameDB' in kwargs:
+            nameDB = kwargs['nameDB']
+        else:
+            nameDB = 'rw_' + dateStr
+
+        if 'locPrecision' in kwargs:
+            locPrecision = kwargs['locPrecision']
+        else:
+            locPrecision = 0
+        
         super().__init__(numPaths, pathLength, segConvFactor, nameDB)
 
         # Convert from user-defined units to simulation units
@@ -441,39 +365,36 @@ class WLCCollector(Collector):
                                             self._persisLength)
 
         myDB = NPDB.NumPyDB_pickle(self._nameDB)
-        
-        # Loop over all combinations of density and persistence length
+
+        myChains = []
+        # Create a list of chains, one for each parameter-pair value
+        # Each chain will be run independently on different cores
         for c, lp in zip(linDensity.flatten(),
                          persisLength.flatten()):
 
+            # This is an array of (in general) different values
             numSegments = self.__pathLength / c
             
-            # Does the collector already have a path object?
-            if not hasattr(self, '_myPath'):
-                self._myPath = WormlikeChain(numSegments[0], lp)
+            # Create new WormlikeChain instance and add it to the list
+            myChain = WormlikeChain(numSegments[0], lp)
+            myChains.append({'chain' : myChain,
+                             'numSegments' : numSegments,
+                             'locPrecision' : self._locPrecision})
 
-            # Main loop for creating paths
-            Rg = zeros(numPaths)
-            RgBump = zeros(numPaths)
-            for ctr in range(self.numPaths):
-                self._myPath.numSegments = numSegments[ctr]
-                self._myPath.pLength = lp
-                self._myPath.makeNewPath()
+        # Compute the gyration radii for all the parameter pairs
+        pool = multiprocessing.Pool()
+        RgData = pool.map(parSimChain, myChains)
+        pool.close(); pool.join()
 
-                Rg[ctr] = computeRg(self._myPath.path)
-                if self._locPrecision != 0:
-                    bumpedPath = bumpPoints(self._myPath.path, self._locPrecision)
-                    RgBump[ctr] = computeRg(bumpedPath)
+        # Unpack the gyration radii and save them to the database
+        for ctr, (c, lp) in enumerate(zip(linDensity.flatten(),
+                                          persisLength.flatten())):
 
-            """=======================================================
-            Possibly move everything below here to a function for
-            organizational purposes and clarity.
-
-            This is code for writing to a pickled database for
-            analyzing the data later.
-
-            """
-                
+            # Unpack the computed RgData
+            currRgData = RgData[ctr]
+            Rg = currRgData['Rg']
+            RgBump = currRgData['RgBump']
+        
             # Convert back to user-defined units
             c = self._convSegments(c, True)
             lp = self._convSegments(lp, False)
@@ -492,11 +413,57 @@ class WLCCollector(Collector):
             except:
                 print('A problem occurred while saving the data.')
 
+def parSimChain(data):
+    """Primary processing for-loop to be parallelized.
+
+    parSimChain(data) is the most intensive part of the simulation. It
+    is a function applied to a WormlikeChain instance and repeatedly
+    calculates new conformations and gyration radii for those
+    conformations. Each WormlikeChain instance was defined with a
+    different persistence length.
+
+    Parameters
+    ----------
+    data : dictionary
+        The data dictionary contains chain, numSegments and
+        locPrecision keys. The chain is the WormlikeChain instance and
+        the numSegments array contains the number of segments to
+        simulate for each chain iteration. locPrecision is the
+        localization precision used for bumping the chain locations.
+
+    Returns
+    -------
+    RgDict : dictionary
+        Dictionary with Rg and RgBump keys containing the gyration
+        radii for the chain and its sampled version.
+    """
+    
+    chain = data['chain']
+    numSegments = data['numSegments']
+    locPrecision = data['locPrecision']
+
+    numPaths = len(numSegments)
+    
+    Rg = zeros(numPaths)
+    RgBump = zeros(numPaths)
+    for ctr in range(numPaths):
+        chain.numSegments = numSegments[ctr]
+        chain.makeNewPath()
+
+        Rg[ctr] = computeRg(chain.path)
+        if locPrecision != 0:
+            bumpedPath = bumpPoints(chain.path, locPrecision)
+            RgBump[ctr] = computeRg(bumpedPath)
+
+    RgDict = {'Rg' : Rg, 'RgBump' : RgBump}
+    return RgDict
+    
 class SizeException(Exception):
     pass
             
 if __name__ == '__main__':
     # Test case 1: test sphere sampling
+
     """import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
 
@@ -591,7 +558,7 @@ if __name__ == '__main__':
 
     # Test case 7: Test the computed Rg's over a range of parameters.
     # Used as main code for generating walks at the moment.
-    from numpy import ones, append
+    """from numpy import ones, append
     import matplotlib.pyplot as plt
     numPaths = 250000 # Number of paths per pair of walk parameters
     pathLength =  5100 * (random(numPaths) - 0.5) + 11750 # bp in walk
@@ -601,7 +568,7 @@ if __name__ == '__main__':
     nameDB = 'rw_' + dateStr
     locPrecision = 2.45 # nm
 
-    tic = time.clock()
+    tic = time.time()
     myCollector = WLCCollector(numPaths,
                                pathLength,
                                linDensity,
@@ -609,10 +576,10 @@ if __name__ == '__main__':
                                segConvFactor,
                                nameDB,
                                locPrecision)
-    toc = time.clock()
+    toc = time.time()
     print('Total processing time: %f' % (toc - tic))
     
-    """myAnalyzer = Analyzer(nameDB)
+    myAnalyzer = Analyzer(nameDB)
 
     c, lp = meshgrid(linDensity, persisLength)
     errorRg = array([])
@@ -734,3 +701,35 @@ if __name__ == '__main__':
     ax2.plot(bumpedPath[:,0], bumpedPath[:,1], bumpedPath[:,2], 'go', alpha = 0.5)
     plt.title('B')
     plt.show()"""
+
+    # Test case 12: Test parallel collector
+    from numpy import ones, append
+    kwargs = {}
+    kwargs['numPaths'] = 100000 # Number of paths per pair of walk parameters
+    kwargs['pathLength'] =  13900 * (random(kwargs['numPaths']) - 0.5) + 26250 # bp in walk
+    #kwargs['pathLength'] = 25000 * ones(kwargs['numPaths'])
+    kwargs['linDensity'] = arange(20, 70, 10)  # bp / nm
+    kwargs['persisLength'] = arange(20, 110, 10) # nm
+    #linDensity = array([100])
+    #persisLength = array([100])
+    kwargs['segConvFactor'] = 25 / 10 # segments / min persisLen
+    kwargs['nameDB'] = 'rw_' + dateStr
+    kwargs['locPrecision'] = 2.12 # nm
+
+    tic = time.time()
+    myCollector = WLCCollector(**kwargs)
+    toc = time.time()
+    print('Total processing time: %f' % (toc - tic))
+
+    """simResults = loadModel(kwargs['nameDB'])
+
+    for key in simResults:
+        Rg = simResults[key][0]
+        c, lp = key
+        RgTheory = WLCRg(c, lp, kwargs['pathLength'][0])
+
+        print(dedent('''
+                     c=%0.1f, lp=%0.1f
+                     The mean of the simulated distribution is %f.
+                     The mean theoretical gyration radius is %f.'''
+                     % (c, lp, mean(Rg), RgTheory)))"""

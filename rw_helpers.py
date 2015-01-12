@@ -37,6 +37,35 @@ def computeRg(path):
 
     return Rg
 
+def WLCRg(c, Lp, N):
+
+    """Return the theoretical value for the gyration radius.
+
+    Parameters
+    ----------
+    c : float
+        The linear density of base pairs in the chain.
+    Lp : float
+        The persistence length of the wormlike chain.
+    N : float
+        The number of base pairs in the chain.
+
+    Returns
+    -------
+    meanRg : float 
+       The mean gyration radius of a theoretical wormlike chain.
+    """
+
+    Rg2 = (Lp * N / c) / 3 - \
+             Lp ** 2 + \
+             2 * Lp ** 3 / (N / c) ** 2 * \
+             ((N / c) - Lp * (1 - np.exp(- (N / c)/ Lp)))
+
+    meanRg = Rg2 ** 0.5
+
+    return meanRg
+
+
 def bumpPoints(path, locPrecision):
         """Bumps the points in a random direction in 3D.
 
@@ -66,7 +95,16 @@ def loadModel(dbName):
 
     Parameters
     ----------
-    
+    dbName : string
+        Name of the NumPyDB object that contains the pickled data.
+
+    Returns
+    -------
+    simResults : dictionary
+        The results of a simulation in dictionary format. Keys denote
+        the simulation parameters. Two arrays of gyration radii belong
+        to each key; the first is for the unbumped data and the second
+        is for the bumped data.
 
     """
     myDB = NPDB.NumPyDB_pickle(dbName, mode = 'load')

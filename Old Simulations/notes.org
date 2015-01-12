@@ -49,3 +49,23 @@ myCollector = WLCCollector(numPaths,
 toc = time.clock()
 print('Total processing time: %f' % (toc - tic))
     
+* rw_2015-01-07
+__version__ = '0.5'
+
+from numpy import ones, append
+kwargs = {}
+kwargs['numPaths'] = 100000 # Number of paths per pair of walk parameters
+kwargs['pathLength'] =  13900 * (random(kwargs['numPaths']) - 0.5) + 26250 # bp in walk
+#kwargs['pathLength'] = 25000 * ones(kwargs['numPaths'])
+kwargs['linDensity'] = arange(20, 70, 10)  # bp / nm
+kwargs['persisLength'] = arange(20, 110, 10) # nm
+#linDensity = array([100])
+#persisLength = array([100])
+kwargs['segConvFactor'] = 25 / 10 # segments / min persisLen
+kwargs['nameDB'] = 'rw_' + dateStr
+kwargs['locPrecision'] = 2.12 # nm
+
+tic = time.time()
+myCollector = WLCCollector(**kwargs)
+toc = time.time()
+print('Total processing time: %f' % (toc - tic))
