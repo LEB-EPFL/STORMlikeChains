@@ -49,8 +49,34 @@ myCollector = WLCCollector(numPaths,
 toc = time.clock()
 print('Total processing time: %f' % (toc - tic))
     
+* rw_2014-12-23
+__version__ = '0.4'
+Simulate large-scale (poor resolution) map for Hela S
+
+from numpy import ones, append
+import matplotlib.pyplot as plt
+numPaths = 250000 # Number of paths per pair of walk parameters
+pathLength =  5100 * (random(numPaths) - 0.5) + 11750 # bp in walk
+linDensity = arange(10, 110, 20)  # bp / nm
+persisLength = arange(10, 210, 20) # nm
+segConvFactor = 25 / min(persisLength) # segments / min persisLen
+nameDB = 'rw_' + dateStr
+locPrecision = 2.45 # nm
+
+tic = time.time()
+myCollector = WLCCollector(numPaths,
+			   pathLength,
+			   linDensity,
+			   persisLength,
+			   segConvFactor,
+			   nameDB,
+			   locPrecision)
+toc = time.time()
+print('Total processing time: %f' % (toc - tic))
+
 * rw_2015-01-07
 __version__ = '0.5'
+Simulate Hela L WT with a medium-resolution of parameters
 
 from numpy import ones, append
 kwargs = {}
@@ -69,3 +95,25 @@ tic = time.time()
 myCollector = WLCCollector(**kwargs)
 toc = time.time()
 print('Total processing time: %f' % (toc - tic))
+* rw_2015-01-14
+  Simulation of Hela L untransfected cells with the Southern blot in
+  the paper.
+
+  __version__ = '0.5'
+  from numpy import ones, append
+  kwargs = {}
+  kwargs['numPaths'] = 100000 # Number of paths per pair of walk parameters
+  kwargs['pathLength'] =  24000 * (random(kwargs['numPaths']) - 0.5) + 27000 # bp in walk
+  #kwargs['pathLength'] = 25000 * ones(kwargs['numPaths'])
+  kwargs['linDensity'] = arange(10, 110, 20)  # bp / nm
+  kwargs['persisLength'] = arange(10, 210, 20) # nm
+  #linDensity = array([100])
+  #persisLength = array([100])
+  kwargs['segConvFactor'] = 25 / 10 # segments / min persisLen
+  kwargs['nameDB'] = 'rw_' + dateStr
+  kwargs['locPrecision'] = 2.12 # nm
+
+  tic = time.time()
+  myCollector = WLCCollector(**kwargs)
+  toc = time.time()
+  print('Total processing time: %f' % (toc - tic))

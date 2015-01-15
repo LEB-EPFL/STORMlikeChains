@@ -706,10 +706,10 @@ if __name__ == '__main__':
     from numpy import ones, append
     kwargs = {}
     kwargs['numPaths'] = 100000 # Number of paths per pair of walk parameters
-    kwargs['pathLength'] =  13900 * (random(kwargs['numPaths']) - 0.5) + 26250 # bp in walk
+    kwargs['pathLength'] =  24000 * (random(kwargs['numPaths']) - 0.5) + 27000 # bp in walk
     #kwargs['pathLength'] = 25000 * ones(kwargs['numPaths'])
     kwargs['linDensity'] = arange(20, 70, 10)  # bp / nm
-    kwargs['persisLength'] = arange(20, 110, 10) # nm
+    kwargs['persisLength'] = arange(10, 110, 10) # nm
     #linDensity = array([100])
     #persisLength = array([100])
     kwargs['segConvFactor'] = 25 / 10 # segments / min persisLen

@@ -226,7 +226,7 @@ def sortLLH(dataPoint, index, binLength, hist):
 
 if __name__ == '__main__':
     dataFName = 'saved_distrs/Original_Data_L_dataset_RgTrans.txt'
-    dbName = 'rw_2014-12-23'
+    dbName = 'rw_2015-1-14'
 
     llh = computeLLH(dbName, dataFName)
 
