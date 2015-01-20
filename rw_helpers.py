@@ -89,14 +89,14 @@ def bumpPoints(path, locPrecision):
 
         return bumpedPath
 
-def loadModel(dbName):
+def loadModel(dbNameList):
     """Loads a model polymer by reading the database generated from
     the polymer simulation.
 
     Parameters
     ----------
-    dbName : string
-        Name of the NumPyDB object that contains the pickled data.
+    dbNameList : list of string
+        Name(s) of the NumPyDB object that contains the pickled data.
 
     Returns
     -------
@@ -107,26 +107,27 @@ def loadModel(dbName):
         is for the bumped data.
 
     """
-    myDB = NPDB.NumPyDB_pickle(dbName, mode = 'load')
+    simResults = {}
+    for dbName in dbNameList:
+        myDB = NPDB.NumPyDB_pickle(dbName, mode = 'load')
+        mapName = ''.join([dbName, '.map'])
+        
+        with open(mapName, 'r') as file:
+            fileLength = sum(1 for _ in file)
+            file.seek(0) # Rewind file to the beginning
 
-    mapName = ''.join([dbName, '.map'])
-    with open(mapName, 'r') as file:
-        fileLength = sum(1 for _ in file)
-        file.seek(0) # Rewind file to the beginning
+            for line in file:
+                # Isloate the parameters in each line of the .map file.
+                # Requires strings formatted like 'c=X, lp=Y'.
+                paramStr = line[line.find('c='):-1]
+                firstComma = paramStr.find(',')
 
-        simResults = {}
-        for line in file:
-            # Isloate the parameters in each line of the .map file.
-            # Requires strings formatted like 'c=X, lp=Y'.
-            paramStr = line[line.find('c='):-1]
-            firstComma = paramStr.find(',')
+                model = myDB.load(paramStr)[0]
 
-            model = myDB.load(paramStr)[0]
-            
-            c = float(paramStr[2:firstComma])
-            lp = float(paramStr[firstComma + 5:])
+                c = float(paramStr[2:firstComma])
+                lp = float(paramStr[firstComma + 5:])
 
-            simResults[(c, lp)] = model
+                simResults[(c, lp)] = model
 
     return simResults
 
@@ -226,32 +227,46 @@ def sortLLH(dataPoint, index, binLength, hist):
 
 if __name__ == '__main__':
     dataFName = 'saved_distrs/Original_Data_L_dataset_RgTrans.txt'
-    dbName = 'rw_2015-1-14'
+    dbNames = ['rw_2015-1-14_HelaL_WT',
+               'rw_2015-1-15_HelaL_WT',
+               'rw_2015-1-16_HelaL_WT']
 
-    llh = computeLLH(dbName, dataFName)
+    llh = computeLLH(dbNames, dataFName)
 
     import matplotlib.pyplot as plt
+    from scipy import interpolate
 
     # Unpack the data structured array
     c = llh['f0']
     lp = llh['f1']
 
-    # Reshape the variables to make a square grid
-    c = np.unique(c)
-    lp = np.unique(lp)
-    C, LP = np.meshgrid(c,lp)
+    # Make a square grid for plotting the likelihood function
+    cSpace = 1 # bp/nm
+    lpSpace = 1 # nm
+    cRange = np.arange(min(c), max(c) + cSpace, cSpace)
+    lpRange = np.arange(min(lp), max(lp) + lpSpace, lpSpace)
+    C, LP = np.meshgrid(cRange,lpRange)
 
-    L = np.sort(llh, order='f1').reshape(C.shape)
-    LLH = L['f2']
+    # Interpolate the likelihood function onto the generated grid
+    rbf = interpolate.Rbf(c, lp, llh['f2'], function = 'linear')
+    LLH = rbf(C, LP)
 
-    isolevels = -np.logspace(6, 4, 15)
+    """isolevels = -np.logspace(6, 4, 15)
     plt.figure()
-    CS = plt.contour(c, lp, LLH, levels = isolevels)
+    CS = plt.contour(C, LP, LLH, levels = isolevels)
     plt.clabel(CS, inline=1, fontsize=10)
     plt.scatter(C.flatten(), LP.flatten())
     plt.title('Parameter space')
     plt.xlabel('Packing density, bp/nm')
     plt.ylabel('Persistence length, nm')
-    plt.show()
+    plt.show()"""
 
-    
+plt.imshow(LLH, vmin = llh['f2'].min(), vmax = llh['f2'].max(),
+           origin = 'lower',
+           extent=[c.min(), c.max(), lp.min(), lp.max()],
+           aspect = 'auto')
+plt.scatter(c, lp, c = llh['f2'])
+plt.colorbar()
+plt.xlim((c.min(), c.max()))
+plt.ylim((lp.min(), lp.max()))
+plt.show()
