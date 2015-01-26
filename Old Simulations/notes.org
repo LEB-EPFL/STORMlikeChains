@@ -74,7 +74,7 @@ myCollector = WLCCollector(numPaths,
 toc = time.time()
 print('Total processing time: %f' % (toc - tic))
 
-* rw_2015-01-07
+* rw_2015-1-7
 __version__ = '0.5'
 Simulate Hela L WT with a medium-resolution of parameters
 
@@ -95,7 +95,7 @@ tic = time.time()
 myCollector = WLCCollector(**kwargs)
 toc = time.time()
 print('Total processing time: %f' % (toc - tic))
-* rw_2015-01-14
+* [#A] rw_2015-1-14_HelaL_WT
   Simulation of Hela L untransfected cells with the Southern blot in
   the paper.
 
@@ -104,14 +104,78 @@ print('Total processing time: %f' % (toc - tic))
   kwargs = {}
   kwargs['numPaths'] = 100000 # Number of paths per pair of walk parameters
   kwargs['pathLength'] =  24000 * (random(kwargs['numPaths']) - 0.5) + 27000 # bp in walk
-  #kwargs['pathLength'] = 25000 * ones(kwargs['numPaths'])
   kwargs['linDensity'] = arange(10, 110, 20)  # bp / nm
   kwargs['persisLength'] = arange(10, 210, 20) # nm
+  kwargs['segConvFactor'] = 25 / 10 # segments / min persisLen
+  kwargs['nameDB'] = 'rw_' + dateStr
+  kwargs['locPrecision'] = 2.12 # nm
+
+  tic = time.time()
+  myCollector = WLCCollector(**kwargs)
+  toc = time.time()
+  print('Total processing time: %f' % (toc - tic))
+
+* [#A] rw_2015-1-15_HelaS_WT
+
+Simulation of Hela S untransfected cells with the Southern blot in the
+paper.
+
+__version__ = '0.5'
+from numpy import ones, append
+kwargs = {}
+kwargs['numPaths'] = 100000 # Number of paths per pair of walk parameters
+kwargs['pathLength'] =  7000 * (random(kwargs['numPaths']) - 0.5) + 12500 # bp in walk
+kwargs['linDensity'] =arange(10, 110, 20)  # bp / nm
+kwargs['persisLength'] = arange(10, 210, 20) # nm
+kwargs['segConvFactor'] = 25 / 10 # segments / min persisLen
+kwargs['nameDB'] = 'rw_' + dateStr
+kwargs['locPrecision'] = 2.45 # nm
+
+* [#A] rw_2015-1-15_HelaL_WT
+Simulate another section of the parameter grid, zooming in slightly
+around the previous Hela L peak.
+
+__version__ = '0.5'
+from numpy import ones, append
+kwargs = {}
+kwargs['numPaths'] = 100000 # Number of paths per pair of walk parameters
+kwargs['pathLength'] =  24000 * (random(kwargs['numPaths']) - 0.5) + 27000 # bp in walk
+kwargs['linDensity'] = arange(20, 100, 20)  # bp / nm
+kwargs['persisLength'] = arange(20, 120, 20) # nm
+kwargs['segConvFactor'] = 25 / 10 # segments / min persisLen
+kwargs['nameDB'] = 'rw_' + dateStr
+kwargs['locPrecision'] = 2.12 # nm
+
+* [#A] rw_2015-1-16_HelaL_WT
+  __version__ = '0.5'
+  from numpy import ones, append
+  kwargs = {}
+  kwargs['numPaths'] = 100000 # Number of paths per pair of walk parameters
+  kwargs['pathLength'] =  24000 * (random(kwargs['numPaths']) - 0.5) + 27000 # bp in walk
+  kwargs['linDensity'] = arange(15, 65, 10)  # bp / nm
+  kwargs['persisLength'] = arange(15,105 , 10) # nm 
+  kwargs['segConvFactor'] = 25 / 10 # segments / min persisLen
+  kwargs['nameDB'] = 'rw_' + dateStr
+  kwargs['locPrecision'] = 2.12 # nm
+
+  tic = time.time()
+  myCollector = WLCCollector(**kwargs)
+  toc = time.time()
+  print('Total processing time: %f' % (toc - tic))
+* [#A] rw_2015-1-16_HelaS_WT
+  __version__ = '0.5'
+  from numpy import ones, append
+  kwargs = {}
+  kwargs['numPaths'] = 100000 # Number of paths per pair of walk parameters
+  kwargs['pathLength'] =  7000 * (random(kwargs['numPaths']) - 0.5) + 12500 # bp in walk
+  #kwargs['pathLength'] = 25000 * ones(kwargs['numPaths'])
+  kwargs['linDensity'] = array([5, 15, 20, 25, 35])  # bp / nm
+  kwargs['persisLength'] = arange(20, 100, 20) # nm
   #linDensity = array([100])
   #persisLength = array([100])
   kwargs['segConvFactor'] = 25 / 10 # segments / min persisLen
   kwargs['nameDB'] = 'rw_' + dateStr
-  kwargs['locPrecision'] = 2.12 # nm
+  kwargs['locPrecision'] = 2.45 # nm
 
   tic = time.time()
   myCollector = WLCCollector(**kwargs)

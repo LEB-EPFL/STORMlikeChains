@@ -3,7 +3,7 @@
 """
 
 __author__ = 'Kyle M. Douglass'
-__version__ = '0.1'
+__version__ = '0.2'
 __email__ = 'kyle.douglass@epfl.ch'
 
 import numpy as np
@@ -117,7 +117,7 @@ def loadModel(dbNameList):
             file.seek(0) # Rewind file to the beginning
 
             for line in file:
-                # Isloate the parameters in each line of the .map file.
+                # Isloate the parameters in each line of .map file.
                 # Requires strings formatted like 'c=X, lp=Y'.
                 paramStr = line[line.find('c='):-1]
                 firstComma = paramStr.find(',')
@@ -127,6 +127,8 @@ def loadModel(dbNameList):
                 c = float(paramStr[2:firstComma])
                 lp = float(paramStr[firstComma + 5:])
 
+                # If the key (c, lp) already exists, data is
+                # overwritten. This shouldn't be a large problem.
                 simResults[(c, lp)] = model
 
     return simResults
@@ -204,6 +206,8 @@ def computeSingleLLH_KDE(simData, expData):
     grid.fit(Rg)
     print('Best bandwidth: %r' % grid.best_params_)"""
 
+    # Cross validation takes a long time, so use a fixed bandwidth
+    # after doing cross validation a few times.
     #kde = KernelDensity(kernel = 'gaussian', bandwidth = grid.best_params_['bandwidth']).fit(Rg)
     kde = KernelDensity(kernel = 'gaussian', bandwidth = 2).fit(Rg)
     log_dens = kde.score_samples(data)
@@ -226,11 +230,14 @@ def sortLLH(dataPoint, index, binLength, hist):
     return probability
 
 if __name__ == '__main__':
-    dataFName = 'saved_distrs/Original_Data_L_dataset_RgTrans.txt'
-    dbNames = ['rw_2015-1-14_HelaL_WT',
-               'rw_2015-1-15_HelaL_WT',
-               'rw_2015-1-16_HelaL_WT']
+    #dataFName = 'saved_distrs/Original_Data_L_dataset_RgTrans.txt'
+    #dbNames = ['rw_2015-1-14_HelaL_WT',
+    #           'rw_2015-1-15_HelaL_WT',
+    #           'rw_2015-1-16_HelaL_WT']
 
+    dataFName = 'saved_distrs/Original_Data_S_dataset_RgTrans.txt'
+    dbNames = ['rw_2015-1-15_HelaS_WT']
+    
     llh = computeLLH(dbNames, dataFName)
 
     import matplotlib.pyplot as plt
@@ -261,7 +268,7 @@ if __name__ == '__main__':
     plt.ylabel('Persistence length, nm')
     plt.show()"""
 
-plt.imshow(LLH, vmin = llh['f2'].min(), vmax = llh['f2'].max(),
+plt.imshow(LLH, vmin = -1.6e4, vmax = LLH.max(),
            origin = 'lower',
            extent=[c.min(), c.max(), lp.min(), lp.max()],
            aspect = 'auto')

@@ -707,11 +707,8 @@ if __name__ == '__main__':
     kwargs = {}
     kwargs['numPaths'] = 100000 # Number of paths per pair of walk parameters
     kwargs['pathLength'] =  24000 * (random(kwargs['numPaths']) - 0.5) + 27000 # bp in walk
-    #kwargs['pathLength'] = 25000 * ones(kwargs['numPaths'])
-    kwargs['linDensity'] = arange(20, 70, 10)  # bp / nm
-    kwargs['persisLength'] = arange(10, 110, 10) # nm
-    #linDensity = array([100])
-    #persisLength = array([100])
+    kwargs['linDensity'] = arange(15, 65, 10)  # bp / nm
+    kwargs['persisLength'] = arange(15,105 , 10) # nm 
     kwargs['segConvFactor'] = 25 / 10 # segments / min persisLen
     kwargs['nameDB'] = 'rw_' + dateStr
     kwargs['locPrecision'] = 2.12 # nm
