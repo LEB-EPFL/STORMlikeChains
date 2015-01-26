@@ -3,7 +3,7 @@
 """
 
 __author__ = 'Kyle M. Douglass'
-__version__ = '0.5'
+__version__ = '0.6'
 __email__ = 'kyle.douglass@epfl.ch'
 
 from math import modf
@@ -321,6 +321,15 @@ class WLCCollector(Collector):
     locPrecision : float (optional)
         Standard deviation of the Gaussian defining the effective
         system PSF. (Default is 0, meaning no bumps are made)
+    fullSpecParam : bool (optional)
+        Do linDensity and persisLength define all the parameter-space
+        points to simulate, or do they instead define the points in a
+        grid to be generated with meshgrid? In the first case, the
+        number of points to simulate is equal to the length of
+        persisLength OR linDensity, whereas in the second case it's
+        equal to the number of points in persisLength TIMES the number
+        of points in linDensity. (Default is false; the points will
+        define a grid in this case).
 
     """
     def __init__(self, **kwargs):
@@ -345,6 +354,11 @@ class WLCCollector(Collector):
             locPrecision = kwargs['locPrecision']
         else:
             locPrecision = 0
+
+        if 'fullSpecParam' in kwargs:
+            self._fullSpecParam = kwargs['fullSpecParam']
+        else:
+            self._fullSpecParam = False
         
         super().__init__(numPaths, pathLength, segConvFactor, nameDB)
 
@@ -356,21 +370,28 @@ class WLCCollector(Collector):
         self.__pathLength = pathLength
 
         self._startCollector()
-
+    
     def _startCollector(self):
         """Begin collecting wormlike chain conformation statistics.
 
         """
-        linDensity, persisLength = meshgrid(self._linDensity,
-                                            self._persisLength)
-
+        if self._fullSpecParam:
+            # Zip together the two arrays
+            loopParams = list(zip(self._linDensity,
+                                  self._persisLength))
+        else:
+            # Generate a grid of points and then zip it
+            linDensity, persisLength = meshgrid(self._linDensity,
+                                                self._persisLength)
+            loopParams = list(zip(linDensity.flatten(),
+                             persisLength.flatten()))
+        
         myDB = NPDB.NumPyDB_pickle(self._nameDB)
 
         myChains = []
         # Create a list of chains, one for each parameter-pair value
         # Each chain will be run independently on different cores
-        for c, lp in zip(linDensity.flatten(),
-                         persisLength.flatten()):
+        for c, lp in loopParams:
 
             # This is an array of (in general) different values
             numSegments = self.__pathLength / c
@@ -387,8 +408,7 @@ class WLCCollector(Collector):
         pool.close(); pool.join()
 
         # Unpack the gyration radii and save them to the database
-        for ctr, (c, lp) in enumerate(zip(linDensity.flatten(),
-                                          persisLength.flatten())):
+        for ctr, (c, lp) in enumerate(loopParams):
 
             # Unpack the computed RgData
             currRgData = RgData[ctr]
@@ -413,6 +433,7 @@ class WLCCollector(Collector):
             except:
                 print('A problem occurred while saving the data.')
 
+                
 def parSimChain(data):
     """Primary processing for-loop to be parallelized.
 
@@ -703,22 +724,25 @@ if __name__ == '__main__':
     plt.show()"""
 
     # Test case 12: Test parallel collector
-    from numpy import ones, append
+    from numpy import ones, append, array
     kwargs = {}
-    kwargs['numPaths'] = 100000 # Number of paths per pair of walk parameters
-    kwargs['pathLength'] =  24000 * (random(kwargs['numPaths']) - 0.5) + 27000 # bp in walk
-    kwargs['linDensity'] = arange(15, 65, 10)  # bp / nm
-    kwargs['persisLength'] = arange(15,105 , 10) # nm 
-    kwargs['segConvFactor'] = 25 / 10 # segments / min persisLen
+    kwargs['numPaths'] = 10000
+    kwargs['pathLength'] = 25000 * ones(kwargs['numPaths'])
+    #kwargs['numPaths'] = 100000 # Number of paths per pair of walk parameters
+    #kwargs['pathLength'] =  24000 * (random(kwargs['numPaths']) - 0.5) + 27000 # bp in walk
+    kwargs['linDensity'] = array([70, 50, 50, 50])  # bp / nm
+    kwargs['persisLength'] = array([10, 20, 50, 100]) # nm 
+    kwargs['segConvFactor'] = 0.1 # segments / min persisLen
     kwargs['nameDB'] = 'rw_' + dateStr
-    kwargs['locPrecision'] = 2.12 # nm
+    kwargs['locPrecision'] = 0 # nm
+    kwargs['fullSpecParam'] = True
 
     tic = time.time()
     myCollector = WLCCollector(**kwargs)
     toc = time.time()
     print('Total processing time: %f' % (toc - tic))
 
-    """simResults = loadModel(kwargs['nameDB'])
+    simResults = loadModel([kwargs['nameDB']])
 
     for key in simResults:
         Rg = simResults[key][0]
@@ -729,4 +753,4 @@ if __name__ == '__main__':
                      c=%0.1f, lp=%0.1f
                      The mean of the simulated distribution is %f.
                      The mean theoretical gyration radius is %f.'''
-                     % (c, lp, mean(Rg), RgTheory)))"""
+                     % (c, lp, mean(Rg), RgTheory)))

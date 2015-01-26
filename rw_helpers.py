@@ -268,12 +268,12 @@ if __name__ == '__main__':
     plt.ylabel('Persistence length, nm')
     plt.show()"""
 
-plt.imshow(LLH, vmin = -1.6e4, vmax = LLH.max(),
-           origin = 'lower',
-           extent=[c.min(), c.max(), lp.min(), lp.max()],
-           aspect = 'auto')
-plt.scatter(c, lp, c = llh['f2'])
-plt.colorbar()
-plt.xlim((c.min(), c.max()))
-plt.ylim((lp.min(), lp.max()))
-plt.show()
+    plt.imshow(LLH, vmin = -1.6e4, vmax = LLH.max(),
+               origin = 'lower',
+               extent=[c.min(), c.max(), lp.min(), lp.max()],
+               aspect = 'auto')
+    plt.scatter(c, lp, c = llh['f2'])
+    plt.colorbar()
+    plt.xlim((c.min(), c.max()))
+    plt.ylim((lp.min(), lp.max()))
+    plt.show()
