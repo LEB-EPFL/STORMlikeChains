@@ -235,8 +235,8 @@ if __name__ == '__main__':
     #           'rw_2015-1-15_HelaL_WT',
     #           'rw_2015-1-16_HelaL_WT']
 
-    dataFName = 'saved_distrs/Original_Data_S_dataset_RgTrans.txt'
-    dbNames = ['rw_2015-1-15_HelaS_WT']
+    dataFName = 'saved_distrs/Original_Data_L_dataset_RgTrans.txt'
+    dbNames = ['rw_2015-1-26_HelaL_WT']
     
     llh = computeLLH(dbNames, dataFName)
 
