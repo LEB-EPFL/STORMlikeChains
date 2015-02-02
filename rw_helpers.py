@@ -133,7 +133,7 @@ def loadModel(dbNameList):
 
     return simResults
 
-def computeLLH(dbName, dataFName, bump = True):
+def computeLLH(dbName, dataFName, bump = True, fishBias = 24.8):
     """Computes the log-likelihood of all simulated parameters.
 
     computeLLH computes the log-likelihood for all the simulated
@@ -150,6 +150,12 @@ def computeLLH(dbName, dataFName, bump = True):
     bump : boolean (optional)
         Use the bumped or unbumped data in the ML reconstruction?
         (Default is True)
+    fishBias : float
+        The bias factor induced by FISH labeling. This adds a constant
+        offset to the distribution, shifting the simulated
+        distributions to larger sizes. Set to 0 if you do not wish to
+        include bias in the estimation.
+        (Default is 24.8 nm, based on measured data.)
     """
     simResults = loadModel(dbName)
     data = np.loadtxt(dataFName)
@@ -160,9 +166,9 @@ def computeLLH(dbName, dataFName, bump = True):
     for ctr, key in enumerate(simResults):
         # Use bumped data or unbumped data?
         if bump:
-            simRg = simResults[key][1]
+            simRg = simResults[key][1] + fishBias
         else:
-            simRg = simResults[key][0]
+            simRg = simResults[key][0] + fishBias
             
         llh = computeSingleLLH_KDE(simRg, data)
         c, lp = key
@@ -236,9 +242,10 @@ if __name__ == '__main__':
     #           'rw_2015-1-16_HelaL_WT']
 
     dataFName = 'saved_distrs/Original_Data_L_dataset_RgTrans.txt'
-    dbNames = ['rw_2015-1-26_HelaL_WT']
+    dbNames = ['rw_2015-1-15_HelaS_WT', 'rw_2015-1-16_HelaS_WT']
+    distOffset = 0
     
-    llh = computeLLH(dbNames, dataFName)
+    llh = computeLLH(dbNames, dataFName, fishBias = distOffset)
 
     import matplotlib.pyplot as plt
     from scipy import interpolate

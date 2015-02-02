@@ -181,6 +181,28 @@ kwargs['locPrecision'] = 2.12 # nm
   myCollector = WLCCollector(**kwargs)
   toc = time.time()
   print('Total processing time: %f' % (toc - tic))
+* [#B] rw_2015-1-20_HelaL_WT
+  Here I'm checking the upper persistence length range of the Hela L
+  WT parameter space.
+  
+  __version__ = '0.5'
+  from numpy import ones, append
+  kwargs = {}
+  kwargs['numPaths'] = 100000 # Number of paths per pair of walk parameters
+  kwargs['pathLength'] =  24000 * (random(kwargs['numPaths']) - 0.5) + 27000 # bp in walk
+  #kwargs['pathLength'] = 25000 * ones(kwargs['numPaths'])
+  kwargs['linDensity'] = arange(30, 55, 5)  # bp / nm
+  kwargs['persisLength'] = arange(100, 210, 10) # nm
+  #linDensity = array([100])
+  #persisLength = array([100])
+  kwargs['segConvFactor'] = 25 / 10 # segments / min persisLen
+  kwargs['nameDB'] = 'rw_' + dateStr
+  kwargs['locPrecision'] = 2.12 # nm
+
+  tic = time.time()
+  myCollector = WLCCollector(**kwargs)
+  toc = time.time()
+  print('Total processing time: %f' % (toc - tic))
 * [#A] rw_2015-1-26_HelaL_WT
   __version__ = '0.6'
   from numpy import ones, append, array, concatenate
