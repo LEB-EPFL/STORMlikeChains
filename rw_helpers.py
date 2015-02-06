@@ -3,7 +3,7 @@
 """
 
 __author__ = 'Kyle M. Douglass'
-__version__ = '0.2'
+__version__ = '0.3'
 __email__ = 'kyle.douglass@epfl.ch'
 
 import numpy as np
@@ -11,6 +11,8 @@ import NumPyDB as NPDB
 import sys
 from sklearn.neighbors import KernelDensity
 from sklearn.grid_search import GridSearchCV
+import matplotlib.pyplot as plt
+from scipy import interpolate
 
 np.seterr(divide='raise')
 
@@ -235,18 +237,63 @@ def sortLLH(dataPoint, index, binLength, hist):
         
     return probability
 
+def unpackLLH(llh):
+    """Unpack the data stored in a processed log-likelihood dataset.
+
+    Parameters
+    ----------
+    llh : Structured numpy array
+        Array of log-likelihood values for a specific packing ratio and
+        persistence length. In order, columns are packing ratio (c),
+        persistence length (lp), and log-likelihood.
+
+    Returns
+    -------
+    C : array of floats
+        Packing ratios.
+    LP : array of floats
+        Persistence lengths.
+    LLH : array of floats
+        Log-likelihood values for each pair of parameters
+
+    """
+    # Unpack the data structured array
+    c = llh['f0']
+    lp = llh['f1']
+
+    # Make a square grid for plotting the likelihood function
+    cSpace = 1 # bp/nm
+    lpSpace = 1 # nm
+    cRange = np.arange(min(c), max(c) + cSpace, cSpace)
+    lpRange = np.arange(min(lp), max(lp) + lpSpace, lpSpace)
+    C, LP = np.meshgrid(cRange,lpRange)
+
+    # Interpolate the likelihood function onto the generated grid
+    rbf = interpolate.Rbf(c, lp, llh['f2'], function = 'linear')
+    LLH = rbf(C, LP)
+
+    return (C, LP, LLH)
+
 if __name__ == '__main__':
     #dataFName = 'saved_distrs/Original_Data_L_dataset_RgTrans.txt'
     #dbNames = ['rw_2015-1-14_HelaL_WT',
     #           'rw_2015-1-15_HelaL_WT',
     #           'rw_2015-1-16_HelaL_WT']
 
-    dataFName = 'saved_distrs/Original_Data_L_dataset_RgTrans.txt'
-    dbNames = ['rw_2015-1-15_HelaS_WT', 'rw_2015-1-16_HelaS_WT']
+    #CHANGE THIS BEFORE RUNNING A NEW ANALYSIS
+    datasetName = 'Original_Data_L_dataset_RgTrans'
+
+    dataFName = 'saved_distrs/' + datasetName + '.txt'
+    dbNames = ['rw_2015-1-26_HelaL_WT']
     distOffset = 0
     
     llh = computeLLH(dbNames, dataFName, fishBias = distOffset)
 
+    # Save the log-likelihood data
+    with open('llh_' + datasetName + '.npy', mode = 'wb') as fileOut:
+        np.save(fileOut, llh)
+        
+    '''
     import matplotlib.pyplot as plt
     from scipy import interpolate
 
@@ -283,4 +330,4 @@ if __name__ == '__main__':
     plt.colorbar()
     plt.xlim((c.min(), c.max()))
     plt.ylim((lp.min(), lp.max()))
-    plt.show()
+    plt.show()'''

@@ -228,3 +228,25 @@ kwargs['locPrecision'] = 2.12 # nm
   myCollector = WLCCollector(**kwargs)
   toc = time.time()
   print('Total processing time: %f' % (toc - tic))
+* [#A] rw_2015-2-2_HelaS_WT
+  from numpy import ones, append, array, concatenate
+  C1, LP1 = meshgrid(arange(10, 55, 5), arange(10, 205, 5))
+  C2, LP2 = meshgrid(arange(60, 100, 10), arange(10, 205, 20))
+
+  C = concatenate((C1.flatten(), C2.flatten()))
+  LP = concatenate((LP1.flatten(), LP2.flatten()))
+
+  kwargs = {}
+  kwargs['numPaths'] = 100000 # Number of paths per pair of walk parameters
+  kwargs['pathLength'] =  7000 * (random(kwargs['numPaths']) - 0.5) + 12500 # bp in walk
+  kwargs['linDensity'] = C  # bp / nm
+  kwargs['persisLength'] = LP # nm 
+  kwargs['segConvFactor'] = 2.5 # segments / min persisLen
+  kwargs['nameDB'] = 'rw_' + dateStr
+  kwargs['locPrecision'] = 10 # nm
+  kwargs['fullSpecParam'] = True
+
+  tic = time.time()
+  myCollector = WLCCollector(**kwargs)
+  toc = time.time()
+  print('Total processing time: %f' % (toc - tic))
