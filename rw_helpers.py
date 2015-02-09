@@ -281,10 +281,10 @@ if __name__ == '__main__':
     #           'rw_2015-1-16_HelaL_WT']
 
     #CHANGE THIS BEFORE RUNNING A NEW ANALYSIS
-    datasetName = 'Original_Data_L_dataset_RgTrans'
+    datasetName = 'Original_Data_S_dataset_RgTrans'
 
     dataFName = 'saved_distrs/' + datasetName + '.txt'
-    dbNames = ['rw_2015-1-26_HelaL_WT']
+    dbNames = ['rw_2015-2-2_HelaS_WT']
     distOffset = 0
     
     llh = computeLLH(dbNames, dataFName, fishBias = distOffset)
