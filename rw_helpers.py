@@ -283,7 +283,7 @@ if __name__ == '__main__':
     #CHANGE THIS BEFORE RUNNING A NEW ANALYSIS
     datasetName = 'Original_Data_S_dataset_RgTrans'
 
-    dataFName = 'saved_distrs/' + datasetName + '.txt'
+    dataFName = 'saved_distrs/' + datasetName
     dbNames = ['rw_2015-2-2_HelaS_WT']
     distOffset = 0
     
