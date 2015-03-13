@@ -95,7 +95,7 @@ tic = time.time()
 myCollector = WLCCollector(**kwargs)
 toc = time.time()
 print('Total processing time: %f' % (toc - tic))
-* [#B] rw_2015-1-14_HelaL_WT
+* [#C] rw_2015-1-14_HelaL_WT
   Simulation of Hela L untransfected cells with the Southern blot in
   the paper.
 
@@ -115,7 +115,7 @@ print('Total processing time: %f' % (toc - tic))
   toc = time.time()
   print('Total processing time: %f' % (toc - tic))
 
-* [#B] rw_2015-1-15_HelaS_WT
+* [#C] rw_2015-1-15_HelaS_WT
 
 Simulation of Hela S untransfected cells with the Southern blot in the
 paper.
@@ -131,7 +131,7 @@ kwargs['segConvFactor'] = 25 / 10 # segments / min persisLen
 kwargs['nameDB'] = 'rw_' + dateStr
 kwargs['locPrecision'] = 2.45 # nm
 
-* [#B] rw_2015-1-15_HelaL_WT
+* [#C] rw_2015-1-15_HelaL_WT
 Simulate another section of the parameter grid, zooming in slightly
 around the previous Hela L peak.
 
@@ -146,7 +146,7 @@ kwargs['segConvFactor'] = 25 / 10 # segments / min persisLen
 kwargs['nameDB'] = 'rw_' + dateStr
 kwargs['locPrecision'] = 2.12 # nm
 
-* [#B] rw_2015-1-16_HelaL_WT
+* [#C] rw_2015-1-16_HelaL_WT
   __version__ = '0.5'
   from numpy import ones, append
   kwargs = {}
@@ -162,7 +162,7 @@ kwargs['locPrecision'] = 2.12 # nm
   myCollector = WLCCollector(**kwargs)
   toc = time.time()
   print('Total processing time: %f' % (toc - tic))
-* [#B] rw_2015-1-16_HelaS_WT
+* [#C] rw_2015-1-16_HelaS_WT
   __version__ = '0.5'
   from numpy import ones, append
   kwargs = {}
@@ -181,7 +181,7 @@ kwargs['locPrecision'] = 2.12 # nm
   myCollector = WLCCollector(**kwargs)
   toc = time.time()
   print('Total processing time: %f' % (toc - tic))
-* [#B] rw_2015-1-20_HelaL_WT
+* [#C] rw_2015-1-20_HelaL_WT
   Here I'm checking the upper persistence length range of the Hela L
   WT parameter space.
   
@@ -250,3 +250,59 @@ kwargs['locPrecision'] = 2.12 # nm
   myCollector = WLCCollector(**kwargs)
   toc = time.time()
   print('Total processing time: %f' % (toc - tic))
+* [#B] rw_2015-3-7-HelaL_WT
+  These are full simulations using the mean localization precision
+  from the data.
+
+  __version__ = '0.6'
+
+  from numpy import ones, append, array, concatenate
+  C1, LP1 = meshgrid(arange(10, 60, 5), arange(10, 105, 5))
+  C2, LP2 = meshgrid(arange(30, 65, 5), arange(105, 205, 5))
+  C3, LP3 = meshgrid(arange(60, 100, 10), arange(10, 220, 20))
+  C4, LP4 = meshgrid(array([20]), arange(110, 210, 20))
+
+  C = concatenate((C1.flatten(), C2.flatten(), C3.flatten(), C4.flatten()))
+  LP = concatenate((LP1.flatten(), LP2.flatten(), LP3.flatten(), LP4.flatten()))
+
+  kwargs = {}
+  kwargs['numPaths'] = 100000 # Number of paths per pair of walk parameters
+  kwargs['pathLength'] =  24000 * (random(kwargs['numPaths']) - 0.5) + 27000 # bp in walk
+  kwargs['linDensity'] = C  # bp / nm
+  kwargs['persisLength'] = LP # nm 
+  kwargs['segConvFactor'] = 2.5 # segments / min persisLen
+  kwargs['nameDB'] = 'rw_' + dateStr
+  kwargs['locPrecision'] = 2.12 # nm
+  kwargs['fullSpecParam'] = True
+
+  tic = time.time()
+  myCollector = WLCCollector(**kwargs)
+  toc = time.time()
+  print('Total processing time: %f' % (toc - tic))
+
+* [#B] rw_2015-3-7-HelaS_WT
+  These are full simulations using the mean localization precision
+  from the data.
+
+  __version__ = '0.6'
+  
+  from numpy import ones, append, array, concatenate
+  C1, LP1 = meshgrid(arange(10, 55, 5), arange(10, 205, 5))
+  C2, LP2 = meshgrid(arange(60, 100, 10), arange(10, 205, 20))
+
+  C = concatenate((C1.flatten(), C2.flatten()))
+  LP = concatenate((LP1.flatten(), LP2.flatten()))
+
+  kwargs = {}
+  kwargs['numPaths'] = 100000 # Number of paths per pair of walk parameters
+  kwargs['pathLength'] =  7000 * (random(kwargs['numPaths']) - 0.5) + 12500 # bp in walk
+  kwargs['linDensity'] = C  # bp / nm
+  kwargs['persisLength'] = LP # nm 
+  kwargs['segConvFactor'] = 2.5 # segments / min persisLen
+  kwargs['nameDB'] = 'rw_' + dateStr
+  kwargs['locPrecision'] = 2.45 # nm
+  kwargs['fullSpecParam'] = True
+
+  tic = time.time()
+  myCollector = WLCCollector(**kwargs)
+  toc = time.time()

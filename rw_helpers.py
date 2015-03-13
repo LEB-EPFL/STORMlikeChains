@@ -281,16 +281,16 @@ if __name__ == '__main__':
     #           'rw_2015-1-16_HelaL_WT']
 
     #CHANGE THIS BEFORE RUNNING A NEW ANALYSIS
-    datasetName = 'Original_Data_L_dataset_RgTrans'
+    datasetName = 'Original_Data_S_dataset_RgTrans'
 
     dataFName = 'saved_distrs/' + datasetName
-    dbNames = ['rw_2015-1-26_HelaL_WT']
+    dbNames = ['rw_2015-3-7_HelaS_WT']
     distOffset = 0
     
     llh = computeLLH(dbNames, dataFName, fishBias = distOffset)
 
     # Save the log-likelihood data
-    with open('llh_' + datasetName + '.npy', mode = 'wb') as fileOut:
+    with open('llh_' + datasetName + '2015-3-7.npy', mode = 'wb') as fileOut:
         np.save(fileOut, llh)
         
     '''

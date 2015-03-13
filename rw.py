@@ -725,20 +725,22 @@ if __name__ == '__main__':
 
     # Test case 12: Test parallel collector
     from numpy import ones, append, array, concatenate
-    C1, LP1 = meshgrid(arange(10, 55, 5), arange(10, 205, 5))
-    C2, LP2 = meshgrid(arange(60, 100, 10), arange(10, 205, 20))
+    C1, LP1 = meshgrid(arange(10, 60, 5), arange(10, 105, 5))
+    C2, LP2 = meshgrid(arange(30, 65, 5), arange(105, 205, 5))
+    C3, LP3 = meshgrid(arange(60, 100, 10), arange(10, 220, 20))
+    C4, LP4 = meshgrid(array([20]), arange(110, 210, 20))
 
-    C = concatenate((C1.flatten(), C2.flatten()))
-    LP = concatenate((LP1.flatten(), LP2.flatten()))
+    C = concatenate((C1.flatten(), C2.flatten(), C3.flatten(), C4.flatten()))
+    LP = concatenate((LP1.flatten(), LP2.flatten(), LP3.flatten(), LP4.flatten()))
 
     kwargs = {}
     kwargs['numPaths'] = 100000 # Number of paths per pair of walk parameters
-    kwargs['pathLength'] =  7000 * (random(kwargs['numPaths']) - 0.5) + 12500 # bp in walk
+    kwargs['pathLength'] =  24000 * (random(kwargs['numPaths']) - 0.5) + 27000 # bp in walk
     kwargs['linDensity'] = C  # bp / nm
     kwargs['persisLength'] = LP # nm 
     kwargs['segConvFactor'] = 2.5 # segments / min persisLen
     kwargs['nameDB'] = 'rw_' + dateStr
-    kwargs['locPrecision'] = 10 # nm
+    kwargs['locPrecision'] = 2.12 # nm
     kwargs['fullSpecParam'] = True
 
     tic = time.time()
