@@ -5,7 +5,7 @@ except ImportError:
 
 config = {
     'description': 'Polymer simulations for localization microscopy',
-    'long_description': 'PolymerPy facilitates the generation and analysis of biopolymer datasets for use in single molecule localization microscopy work.'
+    'long_description': 'PolymerPy facilitates the generation and analysis of biopolymer datasets for use in single molecule localization microscopy work.',
     'author': 'Kyle M. Douglass',
     'url': 'https://github.com/kmdouglass/PolymerPy',
     'download_url': 'https://github.com/kmdouglass/PolymerPy',
@@ -21,8 +21,8 @@ config = {
     'classifiers': ['Development Status :: 3 - Alpha',
                     'Programming Language :: Python :: 3',
                     'Intended Audience :: Science/Research',
-                    'Topic :: Scientific/Engineering',]
-    'keywords': 'polymer simulation localization superresolution microscopy',
+                    'Topic :: Scientific/Engineering'],
+    'keywords': 'polymer simulation localization superresolution microscopy'
     
 }
 
