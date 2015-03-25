@@ -1,27 +1,33 @@
-"""Classes for simulating random walk models for polymer physics.
+"""Classes for simulating random walk models for polymer physics and
+DNA/chromatin studies.
 
 """
 
 __author__ = 'Kyle M. Douglass'
-__version__ = '0.6'
-__email__ = 'kyle.douglass@epfl.ch'
+__email__  = 'kyle.douglass@epfl.ch'
 
 from math import modf
 from textwrap import dedent
 from numpy import pi, cos, sin, arccos, meshgrid, sum, var, zeros
-from numpy import array, cross, concatenate, hstack, cumsum, flatnonzero
+from numpy import array, \
+                  cross, \
+                  concatenate, \
+                  hstack, \
+                  cumsum, \
+                  flatnonzero
 from numpy import histogram, exp, mean, ceil, arange, digitize, log
 from numpy import fromiter, newaxis, linspace
 from numpy import float as npFloat
 from numpy.random import randn, random
 from numpy.linalg import norm
-from sklearn.neighbors import KernelDensity
-from sklearn.grid_search import GridSearchCV
-import NumPyDB as NPDB
+import PolymerPy.NumPyDB as NPDB
 from datetime import datetime
 import time
 import multiprocessing
-from rw_helpers import computeRg, bumpPoints, WLCRg, loadModel
+from PolymerPy.PolymerPy_helpers import computeRg, \
+                                        bumpPoints, \
+                                        WLCRg, \
+                                        loadModel
 
 from scipy.linalg import get_blas_funcs
 # Import nrm2 from FortranBLAS library optimized for vectors.

@@ -7,7 +7,7 @@ __version__ = '0.3'
 __email__ = 'kyle.douglass@epfl.ch'
 
 import numpy as np
-import NumPyDB as NPDB
+import PolymerPy.NumPyDB as NPDB
 import sys
 from sklearn.neighbors import KernelDensity
 from sklearn.grid_search import GridSearchCV
@@ -135,7 +135,7 @@ def loadModel(dbNameList):
 
     return simResults
 
-def computeLLH(dbName, dataFName, bump = True, fishBias = 24.8):
+def computeLLH(dbName, dataFName, bump = True, fishBias = 0):
     """Computes the log-likelihood of all simulated parameters.
 
     computeLLH computes the log-likelihood for all the simulated
@@ -157,7 +157,7 @@ def computeLLH(dbName, dataFName, bump = True, fishBias = 24.8):
         offset to the distribution, shifting the simulated
         distributions to larger sizes. Set to 0 if you do not wish to
         include bias in the estimation.
-        (Default is 24.8 nm, based on measured data.)
+        (Default is 0)
     """
     simResults = loadModel(dbName)
     data = np.loadtxt(dataFName)
