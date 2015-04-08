@@ -474,10 +474,13 @@ def parSimChain(data):
     Rg = zeros(numPaths)
     RgBump = zeros(numPaths)
     for ctr in range(numPaths):
+        # Randomize the starting position
+        randStartDir = random(3) - 0.5
+        
         chain.numSegments = numSegments[ctr]
-        chain.makeNewPath()
+        chain.makeNewPath(initPoint = randStartDir)
 
-        Rg[ctr] = computeRg(chain.path)
+        Rg[ctr] = computeRg(chain.path, dimensions = 2)
         if locPrecision != 0:
             bumpedPath = bumpPoints(chain.path, locPrecision)
             RgBump[ctr] = computeRg(bumpedPath)

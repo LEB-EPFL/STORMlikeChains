@@ -16,7 +16,7 @@ from scipy import interpolate
 
 np.seterr(divide='raise')
 
-def computeRg(path):
+def computeRg(path, dimensions = 3):
     """Compute the radius of gyration of a path.
 
     computeRg() calculates the radius of gyration of a Path
@@ -24,9 +24,12 @@ def computeRg(path):
 
     Parameters
     ----------
-    path : Array fo floats
+    path : Array of floats
         This is a random walk path. The radius of gyration is computed
         from the endpoints of its individual segments.
+    dimensions : int
+        Compute the two dimensional or three dimensional radius of
+        gyration? (Default: dimensions = 3)
 
     Returns
     -------
@@ -35,7 +38,10 @@ def computeRg(path):
 
     """
     secondMoments = np.var(path, axis = 0)
-    Rg = (np.sum(secondMoments)) ** (0.5)
+    if dimensions == 3:
+        Rg = (np.sum(secondMoments)) ** (0.5)
+    elif dimensions == 2:
+        Rg = (np.sum(secondMoments[0:2])) ** (0.5)
 
     return Rg
 
