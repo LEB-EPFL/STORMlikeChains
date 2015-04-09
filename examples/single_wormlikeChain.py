@@ -1,4 +1,18 @@
-"""Run the simulation for the wild type Hela L experiment.
+"""PolymerPy Example: Simulate a single parameter space value.
+
+This example script shows how to setup the the wormlike chain
+collector and run a simulation. The collector object takes a single
+pair of parameter values and generates wormlike chain ensembles. The
+radius of gyration of each chain conformation in the ensemble is saved
+in a NumPy database (NumPyDB). This is simply a class that wraps
+around Python's CPickle utility.
+
+Additionally, a single molecule localization experiment is simulated
+by specifying a non-zero localization precision. This takes each
+monomer in a chain conformation and displaces it randomly in each
+direction according to a Gaussian distribution whose standard
+deviation is equivalent to the localization precision.
+
 """
 
 __author__ = 'Kyle M. Douglass'
@@ -14,21 +28,14 @@ if len(sys.argv) > 1:
 # The example begins here.
 from PolymerPy import PolymerPy
 
-from numpy import array, ones, append, arange, concatenate, meshgrid
+from numpy import ones, append, arange, array, concatenate, meshgrid
 from numpy.random import random
 
 import time
 
-# Define two separate square grids of parameter pair values.
-C1, LP1 = meshgrid(  arange(10, 60, 5),         arange(10, 105, 5))
-C2, LP2 = meshgrid(  arange(30, 65, 5),         arange(105, 205, 5))
-C3, LP3 = meshgrid(arange(60, 100, 10),         arange(10, 220, 20))
-C4, LP4 = meshgrid(        array([20]),         arange(110, 210, 20))
-
-C = concatenate((C1.flatten(), C2.flatten(),
-                 C3.flatten(), C4.flatten()))
-LP = concatenate((LP1.flatten(), LP2.flatten(),
-                  LP3.flatten(), LP4.flatten()))
+# Packing ratio and persistence length
+C = array([40])
+LP = array([50])
 
 """Setup the input parameters for the simulation.
 
@@ -61,14 +68,15 @@ fullSpecParam : bool
 """
 # Create a random numbers for the number of base pairs in each chain.
 numPaths = 1000
-basePairDist = 24000 * (random(numPaths) - 0.5) + 27000
+#basePairDist = 24000 * (random(numPaths) - 0.5) + 27000
+basePairDist = 27000 * ones(numPaths)
 
 simArgs = {'numPaths'      : numPaths,
            'pathLength'    : basePairDist,
            'linDensity'    : C,
            'persisLength'  : LP,
            'segConvFactor' : 2.5,
-           'nameDB'        : 'simData_HelaL_WT_' + PolymerPy.dateStr,
+           'nameDB'        : 'example_single_WLC_DB',
            'locPrecision'  : 10,
            'fullSpecParam' : True}
 
@@ -79,3 +87,12 @@ myCollector = PolymerPy.WLCCollector(**simArgs)
 toc = time.time()
 
 print('Total simulation time: %f' % (toc - tic))
+
+from PolymerPy import PolymerPy_helpers
+from numpy import sqrt
+
+theoryRg3D = PolymerPy_helpers.WLCRg(40, 50, 27000)
+theoryRg2D = theoryRg3D * sqrt(2/3)
+
+print('Theoretical 3DtheoryRg: {0:.4f}'.format(theoryRg3D))
+print('Theoretical 2DtheoryRg: {0:.4f}'.format(theoryRg2D))
