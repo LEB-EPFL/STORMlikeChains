@@ -24,7 +24,8 @@ import numpy as np
 from PolymerPy import PolymerPy_helpers as Helpers
 
 # Load the dataset into memory
-dataset = 'example_LLH_Data.npy'
+#dataset = 'example_LLH_Data.npy'
+dataset = 'HelaL_Test.npy'
 with open(dataset, mode = 'rb') as inFile:
     data = np.load(inFile)
 

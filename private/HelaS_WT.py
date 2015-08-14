@@ -14,7 +14,7 @@ if len(sys.argv) > 1:
 # The example begins here.
 from PolymerPy import PolymerPy
 
-from numpy import array, ones, append, arange, concatenate, meshgrid
+from numpy import array, ones, append, arange, concatenate, meshgrid, loadtxt
 from numpy.random import random
 
 import time
@@ -55,9 +55,11 @@ fullSpecParam : bool
     pair of values that one wants to simulate.
 
 """
-# Create a random numbers for the number of base pairs in each chain.
-numPaths = 100000
-basePairDist = 7000 * (random(numPaths) - 0.5) + 12500
+with open('HeLaSGenomicLength.txt', 'r') as genomicLengthsFile:
+    genomicLengths = loadtxt(genomicLengthsFile)
+    
+numPaths     = 1000
+basePairDist = genomicLengths[0:numPaths] * 1000 # Convert from kb to bp
 
 simArgs = {'numPaths'      : numPaths,
            'pathLength'    : basePairDist,

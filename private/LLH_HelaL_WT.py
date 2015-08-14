@@ -34,7 +34,3 @@ llh = Helpers.computeLLH(dbNames, experimentDatasetName)
 # Save the log-likelihood data to a .npy file.
 with open(outputFName, mode = 'wb') as fileOut:
     save(fileOut, llh)
-
-
-
-

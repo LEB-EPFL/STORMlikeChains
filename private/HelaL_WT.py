@@ -14,7 +14,7 @@ if len(sys.argv) > 1:
 # The example begins here.
 from PolymerPy import PolymerPy
 
-from numpy import array, ones, append, arange, concatenate, meshgrid
+from numpy import array, ones, append, arange, concatenate, meshgrid, loadtxt
 from numpy.random import random
 
 import time
@@ -55,13 +55,17 @@ fullSpecParam : bool
     simulated values are defined by corresponding pairs of values in
     each array?
 
-    This will usually be set to True, so all one must specify every
-    pair of values that one wants to simulate.
+    This will usually be set to True, so all one must specify is every
+    pair of values that one wants to simulate. This allows for non-rectangular
+    arrays of parameters.
 
 """
-# Create a random numbers for the number of base pairs in each chain.
-numPaths = 1000
-basePairDist = 24000 * (random(numPaths) - 0.5) + 27000
+# Load the genomic length distribution from the file
+with open('HeLaLGenomicLength.txt', 'r') as genomicLengthsFile:
+    genomicLengths = loadtxt(genomicLengthsFile)
+    
+numPaths     = 1000
+basePairDist = genomicLengths[0:numPaths] * 1000 # Convert from kb to bp
 
 simArgs = {'numPaths'      : numPaths,
            'pathLength'    : basePairDist,
