@@ -203,7 +203,8 @@ kwargs['locPrecision'] = 2.12 # nm
   myCollector = WLCCollector(**kwargs)
   toc = time.time()
   print('Total processing time: %f' % (toc - tic))
-* [#A] rw_2015-1-26_HelaL_WT
+* [#B] rw_2015-1-26_HelaL_WT
+  Former primary dataset.
   __version__ = '0.6'
   from numpy import ones, append, array, concatenate
   C1, LP1 = meshgrid(arange(10, 60, 5), arange(10, 105, 5))
@@ -228,7 +229,8 @@ kwargs['locPrecision'] = 2.12 # nm
   myCollector = WLCCollector(**kwargs)
   toc = time.time()
   print('Total processing time: %f' % (toc - tic))
-* [#A] rw_2015-2-2_HelaS_WT
+* [#B] rw_2015-2-2_HelaS_WT
+  Former primary dataset.
   from numpy import ones, append, array, concatenate
   C1, LP1 = meshgrid(arange(10, 55, 5), arange(10, 205, 5))
   C2, LP2 = meshgrid(arange(60, 100, 10), arange(10, 205, 20))
@@ -250,7 +252,7 @@ kwargs['locPrecision'] = 2.12 # nm
   myCollector = WLCCollector(**kwargs)
   toc = time.time()
   print('Total processing time: %f' % (toc - tic))
-* [#B] rw_2015-3-7-HelaL_WT
+* [#C] rw_2015-3-7-HelaL_WT
   These are full simulations using the mean localization precision
   from the data.
 
@@ -280,7 +282,7 @@ kwargs['locPrecision'] = 2.12 # nm
   toc = time.time()
   print('Total processing time: %f' % (toc - tic))
 
-* [#B] rw_2015-3-7-HelaS_WT
+* [#C] rw_2015-3-7-HelaS_WT
   These are full simulations using the mean localization precision
   from the data.
 
@@ -333,3 +335,33 @@ kwargs['locPrecision'] = 2.12 # nm
  myCollector = WLCCollector(**kwargs)
  toc = time.time()
  print('Total processing time: %f' % (toc - tic))
+* [#A] simData_HelaL_WT_2015-8-14
+  Primary WT HeLa L dataset for the paper, using the correct genomic length
+  distribution and localization precision.
+
+  C1, LP1 = meshgrid(  arange(10, 60, 5),         arange(10, 105, 5))
+  C2, LP2 = meshgrid(  arange(30, 65, 5),         arange(105, 205, 5))
+  C3, LP3 = meshgrid(arange(60, 100, 10),         arange(10, 220, 20))
+  C4, LP4 = meshgrid(        array([20]),         arange(110, 210, 20))
+
+  C = concatenate((C1.flatten(), C2.flatten(),
+		   C3.flatten(), C4.flatten()))
+  LP = concatenate((LP1.flatten(), LP2.flatten(),
+		    LP3.flatten(), LP4.flatten()))
+
+  # Load the genomic length distribution from the file
+  with open('HeLaLGenomicLength.txt', 'r') as genomicLengthsFile:
+      genomicLengths = loadtxt(genomicLengthsFile)
+
+  numPaths     = 100000
+  basePairDist = genomicLengths[0:numPaths] * 1000 # Convert from kb to bp
+
+  simArgs = {'numPaths'      : numPaths,
+	     'pathLength'    : basePairDist,
+	     'linDensity'    : C,
+	     'persisLength'  : LP,
+	     'segConvFactor' : 2.5,
+	     'nameDB'        : 'simData_HelaL_WT_' + PolymerPy.dateStr,
+	     'locPrecision'  : 15,
+	     'fullSpecParam' : True}
+

@@ -64,7 +64,7 @@ fullSpecParam : bool
 with open('HeLaLGenomicLength.txt', 'r') as genomicLengthsFile:
     genomicLengths = loadtxt(genomicLengthsFile)
     
-numPaths     = 1000
+numPaths     = 100000
 basePairDist = genomicLengths[0:numPaths] * 1000 # Convert from kb to bp
 
 simArgs = {'numPaths'      : numPaths,
@@ -73,7 +73,7 @@ simArgs = {'numPaths'      : numPaths,
            'persisLength'  : LP,
            'segConvFactor' : 2.5,
            'nameDB'        : 'simData_HelaL_WT_' + PolymerPy.dateStr,
-           'locPrecision'  : 10,
+           'locPrecision'  : 15,
            'fullSpecParam' : True}
 
 tic = time.time()
