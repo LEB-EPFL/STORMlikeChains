@@ -364,4 +364,36 @@ kwargs['locPrecision'] = 2.12 # nm
 	     'nameDB'        : 'simData_HelaL_WT_' + PolymerPy.dateStr,
 	     'locPrecision'  : 15,
 	     'fullSpecParam' : True}
+* [#A] simData_HelaL_WT_2015-8-17
+  This filled in a region that was undersampled in the 2015-8-14
+  simulation for HeLa L WT.
+
+  C5, LP5 = meshgrid(arange(65, 105, 10), arange(25, 205, 5))
+  C6, LP6 = meshgrid(arange(60, 100, 10), array([25, 35, 40, 45, 55, 60, 65, 75, 80, 85, 95, 100]))
+  C7, LP7 = meshgrid(arange(70, 100, 10), array([105, 115, 120, 125, 135, 140, 145, 155, 160, 165, 175, 180, 185, 195, 200, 205]))
+
+  C = concatenate((C5.flatten(),
+		   C6.flatten(),
+		   C7.flatten()))
+  LP = concatenate((LP5.flatten(),
+		    LP6.flatten(),
+		    LP7.flatten()))
+
+  # Load the genomic length distribution from the file
+  with open('HeLaLGenomicLength.txt', 'r') as genomicLengthsFile:
+      genomicLengths = loadtxt(genomicLengthsFile)
+
+  numPaths     = 100000
+  basePairDist = genomicLengths[0:numPaths] * 1000 # Convert from kb to bp
+
+  simArgs = {'numPaths'      : numPaths,
+	     'pathLength'    : basePairDist,
+	     'linDensity'    : C,
+	     'persisLength'  : LP,
+	     'segConvFactor' : 2.5,
+	     'nameDB'        : 'simData_HelaL_WT_' + PolymerPy.dateStr,
+	     'locPrecision'  : 15,
+	     'fullSpecParam' : True}
+
+
 

@@ -24,11 +24,24 @@ C1, LP1 = meshgrid(  arange(10, 60, 5),         arange(10, 105, 5))
 C2, LP2 = meshgrid(  arange(30, 65, 5),         arange(105, 205, 5))
 C3, LP3 = meshgrid(arange(60, 100, 10),         arange(10, 220, 20))
 C4, LP4 = meshgrid(        array([20]),         arange(110, 210, 20))
+C5, LP5 = meshgrid(arange(65, 105, 10), arange(25, 205, 5))
+C6, LP6 = meshgrid(arange(60, 100, 10), array([25, 35, 40, 45, 55, 60, 65, 75, 80, 85, 95, 100]))
+C7, LP7 = meshgrid(arange(70, 100, 10), array([105, 115, 120, 125, 135, 140, 145, 155, 160, 165, 175, 180, 185, 195, 200, 205]))
 
-C = concatenate((C1.flatten(), C2.flatten(),
-                 C3.flatten(), C4.flatten()))
-LP = concatenate((LP1.flatten(), LP2.flatten(),
-                  LP3.flatten(), LP4.flatten()))
+C = concatenate((C1.flatten(),
+                 C2.flatten(),
+                 C3.flatten(),
+                 C4.flatten(),
+                 C5.flatten(),
+                 C6.flatten(),
+                 C7.flatten()))
+LP = concatenate((LP1.flatten(),
+                  LP2.flatten(),
+                  LP3.flatten(),
+                  LP4.flatten(),
+                  LP5.flatten(),
+                  LP6.flatten(),
+                  LP7.flatten()))
 
 """Setup the input parameters for the simulation.
 
