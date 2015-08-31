@@ -95,7 +95,7 @@ tic = time.time()
 myCollector = WLCCollector(**kwargs)
 toc = time.time()
 print('Total processing time: %f' % (toc - tic))
-* [#C] rw_2015-1-14_HelaL_WT
+* rw_2015-1-14_HelaL_WT
   Simulation of Hela L untransfected cells with the Southern blot in
   the paper.
 
@@ -115,7 +115,7 @@ print('Total processing time: %f' % (toc - tic))
   toc = time.time()
   print('Total processing time: %f' % (toc - tic))
 
-* [#C] rw_2015-1-15_HelaS_WT
+* rw_2015-1-15_HelaS_WT
 
 Simulation of Hela S untransfected cells with the Southern blot in the
 paper.
@@ -131,7 +131,7 @@ kwargs['segConvFactor'] = 25 / 10 # segments / min persisLen
 kwargs['nameDB'] = 'rw_' + dateStr
 kwargs['locPrecision'] = 2.45 # nm
 
-* [#C] rw_2015-1-15_HelaL_WT
+* rw_2015-1-15_HelaL_WT
 Simulate another section of the parameter grid, zooming in slightly
 around the previous Hela L peak.
 
@@ -146,7 +146,7 @@ kwargs['segConvFactor'] = 25 / 10 # segments / min persisLen
 kwargs['nameDB'] = 'rw_' + dateStr
 kwargs['locPrecision'] = 2.12 # nm
 
-* [#C] rw_2015-1-16_HelaL_WT
+* rw_2015-1-16_HelaL_WT
   __version__ = '0.5'
   from numpy import ones, append
   kwargs = {}
@@ -162,7 +162,7 @@ kwargs['locPrecision'] = 2.12 # nm
   myCollector = WLCCollector(**kwargs)
   toc = time.time()
   print('Total processing time: %f' % (toc - tic))
-* [#C] rw_2015-1-16_HelaS_WT
+*  rw_2015-1-16_HelaS_WT
   __version__ = '0.5'
   from numpy import ones, append
   kwargs = {}
@@ -181,7 +181,7 @@ kwargs['locPrecision'] = 2.12 # nm
   myCollector = WLCCollector(**kwargs)
   toc = time.time()
   print('Total processing time: %f' % (toc - tic))
-* [#C] rw_2015-1-20_HelaL_WT
+* rw_2015-1-20_HelaL_WT
   Here I'm checking the upper persistence length range of the Hela L
   WT parameter space.
   
@@ -203,7 +203,7 @@ kwargs['locPrecision'] = 2.12 # nm
   myCollector = WLCCollector(**kwargs)
   toc = time.time()
   print('Total processing time: %f' % (toc - tic))
-* [#B] rw_2015-1-26_HelaL_WT
+* [#C] rw_2015-1-26_HelaL_WT
   Former primary dataset.
   __version__ = '0.6'
   from numpy import ones, append, array, concatenate
@@ -229,7 +229,7 @@ kwargs['locPrecision'] = 2.12 # nm
   myCollector = WLCCollector(**kwargs)
   toc = time.time()
   print('Total processing time: %f' % (toc - tic))
-* [#B] rw_2015-2-2_HelaS_WT
+* [#C] rw_2015-2-2_HelaS_WT
   Former primary dataset.
   from numpy import ones, append, array, concatenate
   C1, LP1 = meshgrid(arange(10, 55, 5), arange(10, 205, 5))
@@ -252,7 +252,7 @@ kwargs['locPrecision'] = 2.12 # nm
   myCollector = WLCCollector(**kwargs)
   toc = time.time()
   print('Total processing time: %f' % (toc - tic))
-* [#C] rw_2015-3-7-HelaL_WT
+*  rw_2015-3-7-HelaL_WT
   These are full simulations using the mean localization precision
   from the data.
 
@@ -282,7 +282,7 @@ kwargs['locPrecision'] = 2.12 # nm
   toc = time.time()
   print('Total processing time: %f' % (toc - tic))
 
-* [#C] rw_2015-3-7-HelaS_WT
+*  rw_2015-3-7-HelaS_WT
   These are full simulations using the mean localization precision
   from the data.
 
@@ -308,7 +308,7 @@ kwargs['locPrecision'] = 2.12 # nm
   tic = time.time()
   myCollector = WLCCollector(**kwargs)
   toc = time.time()
-* [#C] rw_2015-8-7
+*  rw_2015-8-7
   With this I wanted to compare the simulated datasets with 5 nm
   precision to an experimental dataset taken on the HT-STORM
   microscope, which also has a 5 nm precision.
@@ -335,9 +335,9 @@ kwargs['locPrecision'] = 2.12 # nm
  myCollector = WLCCollector(**kwargs)
  toc = time.time()
  print('Total processing time: %f' % (toc - tic))
-* [#A] simData_HelaL_WT_2015-8-14
-  Primary WT HeLa L dataset for the paper, using the correct genomic length
-  distribution and localization precision.
+*  simData_HelaL_WT_2015-8-14
+  Testing new parameters for WT HeLa L dataset for the paper, using
+  the correct genomic length distribution and localization precision.
 
   C1, LP1 = meshgrid(  arange(10, 60, 5),         arange(10, 105, 5))
   C2, LP2 = meshgrid(  arange(30, 65, 5),         arange(105, 205, 5))
@@ -364,7 +364,7 @@ kwargs['locPrecision'] = 2.12 # nm
 	     'nameDB'        : 'simData_HelaL_WT_' + PolymerPy.dateStr,
 	     'locPrecision'  : 15,
 	     'fullSpecParam' : True}
-* [#A] simData_HelaL_WT_2015-8-17
+*  simData_HelaL_WT_2015-8-17
   This filled in a region that was undersampled in the 2015-8-14
   simulation for HeLa L WT.
 
@@ -394,6 +394,159 @@ kwargs['locPrecision'] = 2.12 # nm
 	     'nameDB'        : 'simData_HelaL_WT_' + PolymerPy.dateStr,
 	     'locPrecision'  : 15,
 	     'fullSpecParam' : True}
+* [#A] simData_HeLaL_WT_2015-8-19
+Primary simulation data for the paper, HeLa L.
 
+from numpy import ones, append, array, concatenate, loadtxt
+
+with open('HeLaLGenomicLength.txt', 'r') as genomicLengthsFile:
+    genomicLengths = loadtxt(genomicLengthsFile)
+
+C1, LP1 = meshgrid(  arange(10, 60, 5),         arange(10, 105, 5))
+C2, LP2 = meshgrid(  arange(30, 65, 5),         arange(105, 205, 5))
+C3, LP3 = meshgrid(arange(60, 100, 10),         arange(10, 220, 20))
+C4, LP4 = meshgrid(        array([20]),         arange(110, 210, 20))
+C5, LP5 = meshgrid(arange(65, 105, 10), arange(25, 205, 5))
+C6, LP6 = meshgrid(arange(60, 100, 10), array([25, 35, 40, 45, 55, 60, 65, 75, 80, 85, 95, 100]))
+C7, LP7 = meshgrid(arange(70, 100, 10), array([105, 115, 120, 125, 135, 140, 145, 155, 160, 165, 175, 180, 185, 195, 200, 205]))
+
+C = concatenate((C1.flatten(),
+		 C2.flatten(),
+		 C3.flatten(),
+		 C4.flatten(),
+		 C5.flatten(),
+		 C6.flatten(),
+		 C7.flatten()))
+LP = concatenate((LP1.flatten(),
+		  LP2.flatten(),
+		  LP3.flatten(),
+		  LP4.flatten(),
+		  LP5.flatten(),
+		  LP6.flatten(),
+		  LP7.flatten()))
+
+numPaths     = 100000
+basePairDist = genomicLengths[0:numPaths] * 1000 # Convert from kb to bp
+
+kwargs = {}
+kwargs['numPaths'] = numPaths # Number of paths per pair of walk parameters
+kwargs['pathLength'] =  basePairDist # bp in walk
+kwargs['linDensity'] = C  # bp / nm
+kwargs['persisLength'] = LP # nm 
+kwargs['segConvFactor'] = 2.5 # segments / min persisLen
+kwargs['nameDB'] = 'simData_HeLaL_WT_' + dateStr
+kwargs['locPrecision'] = 15 # nm
+kwargs['fullSpecParam'] = True
+
+tic = time.time()
+myCollector = WLCCollector(**kwargs)
+toc = time.time()
+print('Total processing time: %f' % (toc - tic))
+
+* [#A] simData_HeLaS_WT_2015-8-21
+Primary simulation data for the paper, HeLa S.
+
+# Define two separate square grids of parameter pair values.
+C1, LP1 = meshgrid(  arange(10, 55, 5),  arange(10, 205, 5))
+C2, LP2 = meshgrid(arange(60, 100, 10), arange(10, 205, 20))
+
+C  = concatenate(( C1.flatten(),  C2.flatten()))
+LP = concatenate((LP1.flatten(), LP2.flatten()))
+
+with open('HeLaSGenomicLength.txt', 'r') as genomicLengthsFile:
+    genomicLengths = loadtxt(genomicLengthsFile)
+    
+numPaths     = 100000
+basePairDist = genomicLengths[0:numPaths] * 1000 # Convert from kb to bp
+
+simArgs = {'numPaths'      : numPaths,
+           'pathLength'    : basePairDist,
+           'linDensity'    : C,
+           'persisLength'  : LP,
+           'segConvFactor' : 2.5,
+           'nameDB'        : 'simData_HelaS_WT_' + PolymerPy.dateStr,
+           'locPrecision'  : 15,
+           'fullSpecParam' : True}
+
+tic = time.time()
+
+# Unpack the argument dictionary and call the collector.
+myCollector = PolymerPy.WLCCollector(**simArgs)
+toc = time.time()
+
+print('Total simulation time: %f' % (toc - tic))
+
+* [#B] simData_HeLaL_WT_2015-8-27
+HeLa L localization precision test: precision = 10 nm
+
+from numpy import ones, append, array, concatenate, loadtxt
+
+with open('HeLaLGenomicLength.txt', 'r') as genomicLengthsFile:
+    genomicLengths = loadtxt(genomicLengthsFile)
+
+C1, LP1 = meshgrid(  arange(10, 60, 5),         arange(10, 105, 5))
+C2, LP2 = meshgrid(  arange(30, 65, 5),         arange(105, 205, 5))
+C3, LP3 = meshgrid(arange(60, 100, 10),         arange(10, 220, 20))
+C4, LP4 = meshgrid(        array([20]),         arange(110, 210, 20))
+C5, LP5 = meshgrid(arange(65, 105, 10), arange(25, 205, 5))
+C6, LP6 = meshgrid(arange(60, 100, 10), array([25, 35, 40, 45, 55, 60, 65, 75, 80, 85, 95, 100]))
+C7, LP7 = meshgrid(arange(70, 100, 10), array([105, 115, 120, 125, 135, 140, 145, 155, 160, 165, 175, 180, 185, 195, 200, 205]))
+
+C = concatenate((C1.flatten(),
+		 C2.flatten(),
+		 C3.flatten(),
+		 C4.flatten(),
+		 C5.flatten(),
+		 C6.flatten(),
+		 C7.flatten()))
+LP = concatenate((LP1.flatten(),
+		  LP2.flatten(),
+		  LP3.flatten(),
+		  LP4.flatten(),
+		  LP5.flatten(),
+		  LP6.flatten(),
+		  LP7.flatten()))
+
+numPaths     = 100000
+basePairDist = genomicLengths[0:numPaths] * 1000 # Convert from kb to bp
+
+kwargs = {}
+kwargs['numPaths'] = numPaths # Number of paths per pair of walk parameters
+kwargs['pathLength'] =  basePairDist # bp in walk
+kwargs['linDensity'] = C  # bp / nm
+kwargs['persisLength'] = LP # nm 
+kwargs['segConvFactor'] = 2.5 # segments / min persisLen
+kwargs['nameDB'] = 'simData_HeLaL_WT_' + dateStr
+kwargs['locPrecision'] = 10 # nm
+kwargs['fullSpecParam'] = True
+
+tic = time.time()
+myCollector = WLCCollector(**kwargs)
+toc = time.time()
+print('Total processing time: %f' % (toc - tic))
+
+* [#B] simData_HeLaS_WT_2015-8-28
+  HeLa S localization precision test: precision = 10 nm
+
+  with open('HeLaSGenomicLength.txt', 'r') as genomicLengthsFile:
+      genomicLengths = loadtxt(genomicLengthsFile)
+
+  numPaths     = 100000
+  basePairDist = genomicLengths[0:numPaths] * 1000 # Convert from kb to bp
+
+  simArgs = {'numPaths'      : numPaths,
+	     'pathLength'    : basePairDist,
+	     'linDensity'    : C,
+	     'persisLength'  : LP,
+	     'segConvFactor' : 2.5,
+	     'nameDB'        : 'simData_HelaS_WT_' + PolymerPy.dateStr,
+	     'locPrecision'  : 10,
+	     'fullSpecParam' : True}
+
+  tic = time.time()
+
+  # Unpack the argument dictionary and call the collector.
+  myCollector = PolymerPy.WLCCollector(**simArgs)
+  toc = time.time()
 
 

@@ -67,7 +67,7 @@ simArgs = {'numPaths'      : numPaths,
            'persisLength'  : LP,
            'segConvFactor' : 2.5,
            'nameDB'        : 'simData_HelaS_WT_' + PolymerPy.dateStr,
-           'locPrecision'  : 15,
+           'locPrecision'  : 10,
            'fullSpecParam' : True}
 
 tic = time.time()
