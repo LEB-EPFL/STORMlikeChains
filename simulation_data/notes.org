@@ -550,3 +550,51 @@ print('Total processing time: %f' % (toc - tic))
   toc = time.time()
 
 
+* [#B] simData_HeLaL_WT_2015-8-31
+HeLa L localization precision test: precision = 5 nm
+
+from numpy import ones, append, array, concatenate, loadtxt
+
+with open('HeLaLGenomicLength.txt', 'r') as genomicLengthsFile:
+    genomicLengths = loadtxt(genomicLengthsFile)
+
+C1, LP1 = meshgrid(  arange(10, 60, 5),         arange(10, 105, 5))
+C2, LP2 = meshgrid(  arange(30, 65, 5),         arange(105, 205, 5))
+C3, LP3 = meshgrid(arange(60, 100, 10),         arange(10, 220, 20))
+C4, LP4 = meshgrid(        array([20]),         arange(110, 210, 20))
+C5, LP5 = meshgrid(arange(65, 105, 10), arange(25, 205, 5))
+C6, LP6 = meshgrid(arange(60, 100, 10), array([25, 35, 40, 45, 55, 60, 65, 75, 80, 85, 95, 100]))
+C7, LP7 = meshgrid(arange(70, 100, 10), array([105, 115, 120, 125, 135, 140, 145, 155, 160, 165, 175, 180, 185, 195, 200, 205]))
+
+C = concatenate((C1.flatten(),
+		 C2.flatten(),
+		 C3.flatten(),
+		 C4.flatten(),
+		 C5.flatten(),
+		 C6.flatten(),
+		 C7.flatten()))
+LP = concatenate((LP1.flatten(),
+		  LP2.flatten(),
+		  LP3.flatten(),
+		  LP4.flatten(),
+		  LP5.flatten(),
+		  LP6.flatten(),
+		  LP7.flatten()))
+
+numPaths     = 100000
+basePairDist = genomicLengths[0:numPaths] * 1000 # Convert from kb to bp
+
+kwargs = {}
+kwargs['numPaths'] = numPaths # Number of paths per pair of walk parameters
+kwargs['pathLength'] =  basePairDist # bp in walk
+kwargs['linDensity'] = C  # bp / nm
+kwargs['persisLength'] = LP # nm 
+kwargs['segConvFactor'] = 2.5 # segments / min persisLen
+kwargs['nameDB'] = 'simData_HeLaL_WT_' + dateStr
+kwargs['locPrecision'] = 10 # nm
+kwargs['fullSpecParam'] = True
+
+tic = time.time()
+myCollector = WLCCollector(**kwargs)
+toc = time.time()
+print('Total processing time: %f' % (toc - tic))

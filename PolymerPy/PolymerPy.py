@@ -188,7 +188,7 @@ class WormlikeChain(Path):
             randVecs = hstack((randVecs, randVecFinal))
 
         # Primary iterative loop for creating the chain
-        currPoint = initPoint
+        currPoint = initPoint / norm(initPoint)
         workingPath = zeros((numSegInt + 1 , 3))
         workingPath[0, :] = currPoint
         for ctr in range(len(tanPlaneDisp)):
@@ -233,9 +233,9 @@ class WormlikeChain(Path):
         initPoint : array of float
             Coordinates of the first point.
 
-        """
+        """        
         self.path = initPoint
-        self._makePath()
+        self._makePath(initPoint)
 
         # Ensure the path field will work with other objects.
         self._checkPath()        
