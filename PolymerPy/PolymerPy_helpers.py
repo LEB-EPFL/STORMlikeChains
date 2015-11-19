@@ -141,7 +141,7 @@ def loadModel(dbNameList):
 
     return simResults
 
-def computeLLH(dbName, dataFName, bump = True, fishBias = 0):
+def computeLLH(dbName, dataFName, bump = True, fishBias = 0, altInput = None):
     """Computes the log-likelihood of all simulated parameters.
 
     computeLLH computes the log-likelihood for all the simulated
@@ -152,7 +152,7 @@ def computeLLH(dbName, dataFName, bump = True, fishBias = 0):
     Parameters
     ----------
     dbName : string
-        Name of the database to load the simulated ata from.
+        Name of the database to load the simulated data from.
     dataFName : string
         Name of file containing the radii of gyration data.
     bump : boolean (optional)
@@ -164,9 +164,17 @@ def computeLLH(dbName, dataFName, bump = True, fishBias = 0):
         distributions to larger sizes. Set to 0 if you do not wish to
         include bias in the estimation.
         (Default is 0)
+    altInput : array of float
+        If this variable is provided, dataFName is ignored and the
+        data is instead taken from this variable. This is primarily
+        used for testing.
+        (Default is None)
     """
     simResults = loadModel(dbName)
-    data = np.loadtxt(dataFName)
+    if altInput is None:
+        data = np.loadtxt(dataFName)
+    else:
+        data = altInput
 
     # Initialize numpy array for holding parameter-pair and LLH values
     llhLandscape = np.zeros((len(simResults),), dtype=('f4,f4,f4'))
@@ -227,7 +235,7 @@ def computeSingleLLH_KDE(simData, expData):
     log_dens = kde.score_samples(data)
 
     return sum(log_dens)
-
+    
 def sortLLH(dataPoint, index, binLength, hist):
     """Helper function for sorting the probabilities by bins.
 
