@@ -69,8 +69,9 @@ fullSpecParam : bool
     This will usually be set to True, so all one must specify every
     pair of values that one wants to simulate.
 chainSubsamples: int
-    How many segments to retain when subsampling the chain. Default is
-    -1, which means to keep all the segments.
+    How many segments to retain when subsampling the chain. This will
+    typically be set to the average number of localizations per
+    cluster. Default is -1, which means to keep all the segments.
 
 """
 # Create a random numbers for the number of base pairs in each chain.
@@ -85,7 +86,7 @@ simArgs = {'numPaths'        : numPaths,
            'nameDB'          : 'example_WLC_DB',
            'locPrecision'    : 10,
            'fullSpecParam'   : True,
-           'chainSubsamples' : 100}
+           'chainSubsamples' : 150}
 
 tic = time.time()
 

@@ -369,10 +369,10 @@ class WLCCollector(Collector):
         else:
             self._fullSpecParam = False
             
-        if 'subSampleChain' in kwargs:
+        if 'chainSubsamples' in kwargs:
             self._chainSubsamples = kwargs['chainSubsamples']
         else:
-            self_.chainSubsamples = -1
+            self._chainSubsamples = -1
         
         super().__init__(numPaths, pathLength, segConvFactor, nameDB)
 
@@ -414,8 +414,8 @@ class WLCCollector(Collector):
             myChain = WormlikeChain(numSegments[0], lp)
             myChains.append({'chain'           : myChain,
                              'numSegments'     : numSegments,
-                             'locPrecision'    : self._locPrecision},
-                             'chainSubsamples' : self._chainSubsamples)
+                             'locPrecision'    : self._locPrecision,
+                             'chainSubsamples' : self._chainSubsamples})
 
         # Compute the gyration radii for all the parameter pairs
         pool   = multiprocessing.Pool()
@@ -491,20 +491,22 @@ def parSimChain(data):
         chain.makeNewPath(initPoint = randStartDir)
         
         # Downsample the chain
-        if (chainSubsamples != -1):
+        if (chainSubsamples == -1):
+            # Keep all segments, i.e. don't downsample
+            downsampledPath = chain.path
+        else:
             try:
-                allRowIndexes   = arange(0, numSegments)
+                allRowIndexes   = arange(0, chain.numSegments)
                 keepTheseRows   = choice(allRowIndexes,
                                          chainSubsamples,
                                          replace = False)
-                downsampledPath = chain.path[keepTheseRows, :]
+                downsampledPath = chain.path[keepTheseRows.astype(int), :]
             except:
                 print('Error in downsampling the chain. Keeping all segments.')
                 print('Does the number of subsamples exceed the number of segments?')
                 downsampledPath = chain.path
                 
-        
-        print('Size of path: {0}'.format(downsampledPath.shape)
+        print('Size of path: {0}'.format(downsampledPath.shape))
         Rg[ctr] = computeRg(downsampledPath, dimensions = 3)
         if locPrecision != 0:
             bumpedPath = bumpPoints(downsampledPath, locPrecision)
