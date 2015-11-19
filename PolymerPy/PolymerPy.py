@@ -1,5 +1,5 @@
 """Classes for simulating random walk models for polymer physics and
-DNA/chromatin studies.
+DNA/chromatin studies with STORM microscopy.
 
 """
 
@@ -18,7 +18,7 @@ from numpy import array, \
 from numpy import histogram, exp, mean, ceil, arange, digitize, log
 from numpy import fromiter, newaxis, linspace
 from numpy import float as npFloat
-from numpy.random import randn, random
+from numpy.random import randn, random, choice
 from numpy.linalg import norm
 import PolymerPy.NumPyDB as NPDB
 from datetime import datetime
@@ -313,21 +313,21 @@ class WLCCollector(Collector):
 
     Parameters
     ----------
-    numPaths : int
+    numPaths        : int
         The number of paths to collect before stopping the simulation
-    pathLength : array of float
+    pathLength      : array of float
         The length of each simulated path in genomic length
-    linDensity : float
+    linDensity      : float
         The number of base pairs per user-defined unit of length
-    persisLength : float
+    persisLength    : float
         The path's persistence length in user-defined units of length
-    segConvFactor : float (optional)
+    segConvFactor   : float (optional)
         Conversion factor between the user units and path segments
         (Default is 1)
-    locPrecision : float (optional)
+    locPrecision    : float (optional)
         Standard deviation of the Gaussian defining the effective
         system PSF. (Default is 0, meaning no bumps are made)
-    fullSpecParam : bool (optional)
+    fullSpecParam   : bool (optional)
         Do linDensity and persisLength define all the parameter-space
         points to simulate, or do they instead define the points in a
         grid to be generated with meshgrid? In the first case, the
@@ -336,14 +336,17 @@ class WLCCollector(Collector):
         equal to the number of points in persisLength TIMES the number
         of points in linDensity. (Default is false; the points will
         define a grid in this case).
+    chainSubsamples : int (optional)
+        The number of segments in the chain to keep; models the small number of
+        localizations obtained per chain. (Default is -1, keep all segments.)
 
     """
     def __init__(self, **kwargs):
 
         # Unpack the arguments
-        numPaths = kwargs['numPaths']
-        pathLength = kwargs['pathLength']
-        linDensity = kwargs['linDensity']
+        numPaths     = kwargs['numPaths']
+        pathLength   = kwargs['pathLength']
+        linDensity   = kwargs['linDensity']
         persisLength = kwargs['persisLength']
 
         if 'segConvFactor' in kwargs:
@@ -365,11 +368,16 @@ class WLCCollector(Collector):
             self._fullSpecParam = kwargs['fullSpecParam']
         else:
             self._fullSpecParam = False
+            
+        if 'subSampleChain' in kwargs:
+            self._chainSubsamples = kwargs['chainSubsamples']
+        else:
+            self_.chainSubsamples = -1
         
         super().__init__(numPaths, pathLength, segConvFactor, nameDB)
 
         # Convert from user-defined units to simulation units
-        self._linDensity = self._convSegments(linDensity, False)
+        self._linDensity   = self._convSegments(linDensity, False)
         self._persisLength = self._convSegments(persisLength, True)
         self._locPrecision = self._convSegments(locPrecision, True)
 
@@ -404,12 +412,13 @@ class WLCCollector(Collector):
             
             # Create new WormlikeChain instance and add it to the list
             myChain = WormlikeChain(numSegments[0], lp)
-            myChains.append({'chain' : myChain,
-                             'numSegments' : numSegments,
-                             'locPrecision' : self._locPrecision})
+            myChains.append({'chain'           : myChain,
+                             'numSegments'     : numSegments,
+                             'locPrecision'    : self._locPrecision},
+                             'chainSubsamples' : self._chainSubsamples)
 
         # Compute the gyration radii for all the parameter pairs
-        pool = multiprocessing.Pool()
+        pool   = multiprocessing.Pool()
         RgData = pool.map(parSimChain, myChains)
         pool.close(); pool.join()
 
@@ -418,11 +427,11 @@ class WLCCollector(Collector):
 
             # Unpack the computed RgData
             currRgData = RgData[ctr]
-            Rg = currRgData['Rg']
-            RgBump = currRgData['RgBump']
+            Rg         = currRgData['Rg']
+            RgBump     = currRgData['RgBump']
         
             # Convert back to user-defined units
-            c = self._convSegments(c, True)
+            c  = self._convSegments(c, True)
             lp = self._convSegments(lp, False)
             Rg = self._convSegments(Rg, False)
             if self._locPrecision != 0:
@@ -465,9 +474,10 @@ def parSimChain(data):
         radii for the chain and its sampled version.
     """
     
-    chain = data['chain']
-    numSegments = data['numSegments']
-    locPrecision = data['locPrecision']
+    chain           = data['chain']
+    numSegments     = data['numSegments']
+    locPrecision    = data['locPrecision']
+    chainSubsamples = data['chainSubsamples']
 
     numPaths = len(numSegments)
     
@@ -479,10 +489,24 @@ def parSimChain(data):
         
         chain.numSegments = numSegments[ctr]
         chain.makeNewPath(initPoint = randStartDir)
+        
+        # Downsample the chain
+        if (chainSubsamples != -1):
+            try:
+                allRowIndexes   = arange(0, numSegments)
+                keepTheseRows   = choice(allRowIndexes,
+                                         chainSubsamples,
+                                         replace = False)
+                downsampledPath = chain.path[keepTheseRows, :]
+            except:
+                print('Error in downsampling the chain. Keeping all segments.')
+                print('Does the number of subsamples exceed the number of segments?')
+                downsampledPath = chain.path
+                
 
-        Rg[ctr] = computeRg(chain.path, dimensions = 3)
+        Rg[ctr] = computeRg(downsampledPath, dimensions = 3)
         if locPrecision != 0:
-            bumpedPath = bumpPoints(chain.path, locPrecision)
+            bumpedPath = bumpPoints(downsampledPath, locPrecision)
             RgBump[ctr] = computeRg(bumpedPath, dimensions = 3)
 
     RgDict = {'Rg' : Rg, 'RgBump' : RgBump}
