@@ -503,7 +503,8 @@ def parSimChain(data):
                 print('Does the number of subsamples exceed the number of segments?')
                 downsampledPath = chain.path
                 
-
+        
+        print('Size of path: {0}'.format(downsampledPath.shape)
         Rg[ctr] = computeRg(downsampledPath, dimensions = 3)
         if locPrecision != 0:
             bumpedPath = bumpPoints(downsampledPath, locPrecision)

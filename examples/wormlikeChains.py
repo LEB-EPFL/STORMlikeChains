@@ -68,20 +68,24 @@ fullSpecParam : bool
 
     This will usually be set to True, so all one must specify every
     pair of values that one wants to simulate.
+chainSubsamples: int
+    How many segments to retain when subsampling the chain. Default is
+    -1, which means to keep all the segments.
 
 """
 # Create a random numbers for the number of base pairs in each chain.
 numPaths = 10
 basePairDist = 24000 * (random(numPaths) - 0.5) + 27000
 
-simArgs = {'numPaths'      : numPaths,
-           'pathLength'    : basePairDist,
-           'linDensity'    : C,
-           'persisLength'  : LP,
-           'segConvFactor' : 2.5,
-           'nameDB'        : 'example_WLC_DB',
-           'locPrecision'  : 10,
-           'fullSpecParam' : True}
+simArgs = {'numPaths'        : numPaths,
+           'pathLength'      : basePairDist,
+           'linDensity'      : C,
+           'persisLength'    : LP,
+           'segConvFactor'   : 2.5,
+           'nameDB'          : 'example_WLC_DB',
+           'locPrecision'    : 10,
+           'fullSpecParam'   : True,
+           'chainSubsamples' : 100}
 
 tic = time.time()
 
