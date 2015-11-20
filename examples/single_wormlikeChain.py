@@ -1,4 +1,4 @@
-"""PolymerPy Example: Simulate a single parameter space value.
+"""PolymerPy Example: Simulate a single ensemble of wormlike chains.
 
 This example script shows how to setup the the wormlike chain
 collector and run a simulation. The collector object takes a single
@@ -64,11 +64,16 @@ fullSpecParam : bool
 
     This will usually be set to True, so all one must specify every
     pair of values that one wants to simulate.
+chainSubsamples : int (optional)
+    The number of segments in the chain to keep; models the small
+    number of localizations obtained per chain. (Default is -1, keep
+    all segments.)
+
 
 """
 # Create a random numbers for the number of base pairs in each chain.
 numPaths = 1000
-#basePairDist = 24000 * (random(numPaths) - 0.5) + 27000
+# basePairDist = 24000 * (random(numPaths) - 0.5) + 27000
 basePairDist = 27000 * ones(numPaths)
 
 simArgs = {'numPaths'      : numPaths,
@@ -78,7 +83,8 @@ simArgs = {'numPaths'      : numPaths,
            'segConvFactor' : 2.5,
            'nameDB'        : 'example_single_WLC_DB',
            'locPrecision'  : 10,
-           'fullSpecParam' : True}
+           'fullSpecParam' : True,
+           'chainSubsamples' : 150}
 
 tic = time.time()
 

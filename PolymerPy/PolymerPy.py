@@ -339,7 +339,7 @@ class WLCCollector(Collector):
     chainSubsamples : int (optional)
         The number of segments in the chain to keep; models the small number of
         localizations obtained per chain. (Default is -1, keep all segments.)
-
+        
     """
     def __init__(self, **kwargs):
 
