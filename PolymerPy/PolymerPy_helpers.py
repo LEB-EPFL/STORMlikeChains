@@ -159,10 +159,11 @@ def computeLLH(dbName, dataFName, bump = True, fishBias = 0, altInput = None):
         Use the bumped or unbumped data in the ML reconstruction?
         (Default is True)
     fishBias : float
-        The bias factor induced by FISH labeling. This adds a constant
-        offset to the distribution, shifting the simulated
-        distributions to larger sizes. Set to 0 if you do not wish to
-        include bias in the estimation.
+        The bias factor induced by FISH (or antibody) labeling. This
+        adds a constant offset to the distribution, shifting the
+        simulated distributions to larger sizes. This is primarily
+        used for exploring labeling artifacts, so its use is not
+        recommended unless your sample labeling is well-characterized.
         (Default is 0)
     altInput : array of float
         If this variable is provided, dataFName is ignored and the
