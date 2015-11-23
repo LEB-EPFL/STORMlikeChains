@@ -11,7 +11,7 @@ comparison to microscopy experiments.
 The software was originally developed by Kyle Douglass for use in the
 Laboratory of Experimental Biophysics at École Polytechnique Fédérale
 de Lausanne (EPFL) in Lausanne, Switzerland. He may be contacted at
-kyle.douglass@epfl.ch or by visiting [http://kmdouglass.github.io].
+kyle.douglass@epfl.ch or by visiting http://kmdouglass.github.io.
 
 ## Contents ##
 ### Files ###
@@ -21,8 +21,8 @@ kyle.douglass@epfl.ch or by visiting [http://kmdouglass.github.io].
 ### Folders ###
 + *PolymerPy* - Folder containing the PolymerPy module code.
 + *examples* - Example scripts demonstrating how to use the code.
-+ *experimental_distrs* - Radius of gyration distributions from the
-manuscript for HeLa S and HeLa L.
++ *manuscript* - Radius of gyration distributions, genomic length
+distributions, and simulation scripts used in the manuscript.
 
 ## Instructions ##
 
