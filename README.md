@@ -1,8 +1,8 @@
-PolymerPy
-=========
+STORMlike Chains
+================
 
-PolymerPy is a Python package for analyzing biopolymers imaged with
-single molecule localization microscopies, such as STORM and
+STORMlike Chains is a Python package for analyzing biopolymers imaged
+with single molecule localization microscopies, such as STORM and
 PALM. Among other things, the module may be used to generate
 individual realizations of biopolymers, to simulate an ensemble of
 polymer realizations, or to construct artificial datasets for direct
@@ -19,7 +19,7 @@ kyle.douglass@epfl.ch or by visiting http://kmdouglass.github.io.
 + *setup.py* - Used to install this module.
 
 ### Folders ###
-+ *PolymerPy* - Folder containing the PolymerPy module code.
++ *STORMlikeChains* - Folder containing the STORMlikeChains code.
 + *examples* - Example scripts demonstrating how to use the code.
 + *manuscript* - Radius of gyration distributions, genomic length
 distributions, and simulation scripts used in the manuscript.
