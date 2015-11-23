@@ -66,7 +66,7 @@ fullSpecParam : bool
     simulated values are defined by corresponding pairs of values in
     each array?
 
-    This will usually be set to True, so all one must specify every
+    This will usually be set to True, so all one must specify is every
     pair of values that one wants to simulate.
 chainSubsamples: int
     How many segments to retain when subsampling the chain. This will
