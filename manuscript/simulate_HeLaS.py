@@ -8,17 +8,18 @@ gyration distributions for comparison to the experimental STORM data.
 __author__ = 'Kyle M. Douglass'
 __email__  = 'kyle.douglass@epfl.ch'
 
-# Ensure the script can access PolymerPy during development.
-# Add PolymerPy path to PYTHONPATH during installation.
+# Ensure the script can access STORMlikeChains during development.
+# Add STORMlikeChains path to PYTHONPATH during installation.
 import sys
 if len(sys.argv) > 1:
     if sys.argv[1] == '-d':
-        sys.path.append('/home/douglass/src/PolymerPy/')
+        sys.path.append('/home/douglass/src/STORMlikeChains/')
 
 # The example begins here.
-from PolymerPy import PolymerPy
+from STORMlikeChains import STORMlikeChains
 
 from numpy import ones, append, arange, concatenate, meshgrid, loadtxt
+from numpy import array
 from numpy.random import random
 
 import time
@@ -84,7 +85,7 @@ simArgs = {'numPaths'        : numPaths,
 tic = time.time()
 
 # Unpack the argument dictionary and call the collector.
-myCollector = PolymerPy.WLCCollector(**simArgs)
+myCollector = STORMlikeChains.WLCCollector(**simArgs)
 toc = time.time()
 
 print('Total simulation time: %f' % (toc - tic))
