@@ -31,5 +31,6 @@ scripts *simulate_HeLaL.py* and *simulateHeLaS.py* to generate
 simulated datasets. These datasets may be compared to the experimental
 radius of gyration data found in *Original_Data_L_dataset_RgTrans* and
 *Original_Data_S_dataset_RgTrans*, respectively, using the helper
-functions as described in the _examples_ directory.
+functions as described in the _examples_ directory, which is located
+in the root directory of this repository.
 
