@@ -1,4 +1,4 @@
-"""PolymerPy Example: Compute log-likelihood data.
+"""STORMlikeChains Example: Compute log-likelihood data.
 
 This example demonstrates how to take the simulated data in
 example_WLC_DB.dat and compute the likelihood that a simulated
@@ -11,16 +11,16 @@ The measured example data is in example_Measured_Dist.txt.
 __author__ = 'Kyle M. Douglass'
 __email__  = 'kyle.douglass@epfl.ch'
 
-# Ensure the script can access PolymerPy during development.
-# Add PolymerPy path to PYTHONPATH during installation.
+# Ensure the script can access STORMlikeChains during development.
+# Add STORMlikeChains path to PYTHONPATH during installation.
 import sys
 if len(sys.argv) > 1:
     if sys.argv[1] == '-d':
-        sys.path.append('/home/douglass/src/PolymerPy/')
+        sys.path.append('/home/douglass/src/STORMlikeChains/')
 
 # Example begins here
 from numpy import save
-from PolymerPy import PolymerPy_helpers as Helpers
+from STORMlikeChains import STORMlikeChains_helpers as Helpers
 
 experimentDatasetName = 'example_Measured_Dist.txt'
 

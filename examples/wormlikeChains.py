@@ -1,4 +1,4 @@
-"""PolymerPy Example: Simulate a number of wormlike chains.
+"""STORMlikeChains Example: Simulate a number of wormlike chain ensembles.
 
 This example script shows how to setup the the wormlike chain
 collector and run a simulation. The collector object takes a range of
@@ -19,15 +19,15 @@ deviation is equivalent to the localization precision.
 __author__ = 'Kyle M. Douglass'
 __email__  = 'kyle.douglass@epfl.ch'
 
-# Ensure the script can access PolymerPy during development.
-# Add PolymerPy path to PYTHONPATH during installation.
+# Ensure the script can access STORMlikeChains during development.
+# Add STORMlikeChains path to STORMlikeChains during installation.
 import sys
 if len(sys.argv) > 1:
     if sys.argv[1] == '-d':
-        sys.path.append('/home/douglass/src/PolymerPy/')
+        sys.path.append('/home/douglass/src/STORMlikeChains/')
 
 # The example begins here.
-from PolymerPy import PolymerPy
+from STORMlikeChains import STORMlikeChains
 
 from numpy import ones, append, arange, concatenate, meshgrid
 from numpy.random import random
@@ -91,7 +91,7 @@ simArgs = {'numPaths'        : numPaths,
 tic = time.time()
 
 # Unpack the argument dictionary and call the collector.
-myCollector = PolymerPy.WLCCollector(**simArgs)
+myCollector = STORMlikeChains.WLCCollector(**simArgs)
 toc = time.time()
 
 print('Total simulation time: %f' % (toc - tic))

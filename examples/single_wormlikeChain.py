@@ -1,4 +1,4 @@
-"""PolymerPy Example: Simulate a single ensemble of wormlike chains.
+"""STORMlikeChains Example: Simulate an ensemble of wormlike chains.
 
 This example script shows how to setup the the wormlike chain
 collector and run a simulation. The collector object takes a single
@@ -18,15 +18,15 @@ deviation is equivalent to the localization precision.
 __author__ = 'Kyle M. Douglass'
 __email__  = 'kyle.douglass@epfl.ch'
 
-# Ensure the script can access PolymerPy during development.
-# Add PolymerPy path to PYTHONPATH during installation.
+# Ensure the script can access STORMlikeChains during development.
+# Add STORMlikeChains path to PYTHONPATH during installation.
 import sys
 if len(sys.argv) > 1:
     if sys.argv[1] == '-d':
-        sys.path.append('/home/douglass/src/PolymerPy/')
+        sys.path.append('/home/douglass/src/STORMlikeChains/')
 
 # The example begins here.
-from PolymerPy import PolymerPy
+from STORMlikeChains import STORMlikeChains
 
 from numpy import ones, append, arange, array, concatenate, meshgrid
 from numpy.random import random
@@ -89,15 +89,15 @@ simArgs = {'numPaths'      : numPaths,
 tic = time.time()
 
 # Unpack the argument dictionary and call the collector.
-myCollector = PolymerPy.WLCCollector(**simArgs)
+myCollector = STORMlikeChains.WLCCollector(**simArgs)
 toc = time.time()
 
 print('Total simulation time: %f' % (toc - tic))
 
-from PolymerPy import PolymerPy_helpers
+from STORMlikeChains import STORMlikeChains_helpers
 from numpy import sqrt
 
-theoryRg3D = PolymerPy_helpers.WLCRg(40, 50, 27000)
+theoryRg3D = STORMlikeChains_helpers.WLCRg(40, 50, 27000)
 theoryRg2D = theoryRg3D * sqrt(2/3)
 
 print('Theoretical 3DtheoryRg: {0:.4f}'.format(theoryRg3D))
