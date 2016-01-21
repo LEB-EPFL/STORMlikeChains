@@ -80,9 +80,9 @@ simArgs = {'numPaths'      : numPaths,
            'pathLength'    : basePairDist,
            'linDensity'    : C,
            'persisLength'  : LP,
-           'segConvFactor' : 1/10, #2.5
+           'segConvFactor' : 1, #2.5
            'nameDB'        : 'example_single_WLC_DB',
-           'locPrecision'  : 10,
+           'locPrecision'  : 15,
            'fullSpecParam' : True,
            'chainSubsamples' : -1} #150
 

@@ -15,7 +15,7 @@ from numpy import array, \
                   hstack, \
                   cumsum, \
                   flatnonzero
-from numpy import histogram, exp, mean, ceil, arange, digitize, log
+from numpy import histogram, exp, mean, ceil, arange, digitize, log, median
 from numpy import fromiter, newaxis, linspace
 from numpy import float as npFloat
 from numpy.random import randn, random, choice
@@ -165,7 +165,7 @@ class WormlikeChain(Path):
             raise ValueError(errorStr)
         
         numSegFrac, numSegInt = modf(self.numSegments)
-        numSegInt = int(numSegInt)
+        numSegInt             = int(numSegInt)
         
         # Create the displacement distances in the tangent planes
         angDisp = (2 / self.pLength) ** (0.5) \
@@ -177,7 +177,7 @@ class WormlikeChain(Path):
         
         # Final small displacement for non-integer numSegments
         if numSegFrac != 0.0:
-            angDispFinal = (self.pLength * numSegFrac) ** (-0.5) \
+            angDispFinal = (self.pLength * numSegFrac / 2) ** (-0.5) \
                            * randn(1)
             tanPlaneDispFinal = numSegFrac * sin(angDispFinal)
             randVecFinal = numSegFrac * self._randPointSphere(1)
@@ -430,6 +430,8 @@ class WLCCollector(Collector):
             currRgData = RgData[ctr]
             Rg         = currRgData['Rg']
             RgBump     = currRgData['RgBump']
+            ecc        = currRgData['ecc']
+            eccBump    = currRgData['eccBump']
         
             # Convert back to user-defined units
             c  = self._convSegments(c, True)
@@ -446,6 +448,7 @@ class WLCCollector(Collector):
                 identifier = 'c=%s, lp=%s' % (c, lp)
                 myDB.dump((Rg, RgBump), identifier)
                 print('Mean of all path Rg\'s: %f' % mean(Rg))
+                print('Median of all path ecc\'s: %f' % median(eccBump))
             except:
                 print('A problem occurred while saving the data.')
 
@@ -470,9 +473,8 @@ def parSimChain(data):
 
     Returns
     -------
-    RgDict : dictionary
-        Dictionary with Rg and RgBump keys containing the gyration
-        radii for the chain and its sampled version.
+    statsDict : dictionary
+        Dictionary with the statistics computed from each path.
     """
     
     chain           = data['chain']
@@ -524,8 +526,8 @@ def parSimChain(data):
             RgBump[ctr]  = Rg[ctr]
             eccBump[ctr] = ecc[ctr]
 
-    RgDict = {'Rg' : Rg, 'RgBump' : RgBump}
-    return RgDict
+    statsDict = {'Rg' : Rg, 'RgBump' : RgBump, 'ecc' : ecc, 'eccBump' : eccBump}
+    return statsDict
     
 class SizeException(Exception):
     pass

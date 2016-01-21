@@ -51,8 +51,24 @@ def computeEcc(path):
     computeEcc() calculates the eccentricity of a projection of the path
     segments onto the x-y plane. The eccentricity is the ratio of the maximum
     to the minimum eigenvalue of the covariance matrix of the x and y
-    points."""
-    pass
+    points.
+    
+    Parameters
+    ----------
+    path : Array of floats
+        This is a random walk path. The radius of gyration is computed
+        from the endpoints of its individual segments.
+        
+    Returns
+    -------
+    ecc  : float
+        The eccentricity of the path.
+    """
+    covariance = np.cov(path[:,0:2], rowvar = 0)
+    eigs, _    = np.linalg.eig(covariance)
+    
+    ecc = np.max(eigs) / np.min(eigs)
+    return ecc
 
 def WLCRg(c, Lp, N):
 
