@@ -24,10 +24,11 @@ import STORMlikeChains.NumPyDB as NPDB
 from datetime import datetime
 import time
 import multiprocessing
-from STORMlikeChains.STORMlikeChains_helpers import computeRg, \
+from STORMlikeChains.STORMlikeChains_helpers import computeRg,  \
                                                     bumpPoints, \
-                                                    WLCRg, \
-                                                    loadModel
+                                                    WLCRg,      \
+                                                    loadModel,  \
+                                                    computeEcc
 
 from scipy.linalg import get_blas_funcs
 # Import nrm2 from FortranBLAS library optimized for vectors.
@@ -36,10 +37,10 @@ nrm2, = get_blas_funcs(('nrm2',), dtype = 'float64')
 
 # Find current date for naming the database.
 currentTime = datetime.now()
-year = currentTime.year
-month = currentTime.month
-day = currentTime.day
-dateStr = "%s-%s-%s" % (year, month, day)
+year        = currentTime.year
+month       = currentTime.month
+day         = currentTime.day
+dateStr     = "%s-%s-%s" % (year, month, day)
 
 class Path():
     def _randPointSphere(self, numPoints):
@@ -481,8 +482,14 @@ def parSimChain(data):
 
     numPaths = len(numSegments)
     
-    Rg = zeros(numPaths)
-    RgBump = zeros(numPaths)
+    # Radius of gyration
+    Rg      = zeros(numPaths)
+    RgBump  = zeros(numPaths)
+    
+    # Eccentricity of path
+    ecc     = zeros(numPaths)
+    eccBump = zeros(numPaths)
+    
     for ctr in range(numPaths):
         # Randomize the starting position
         randStartDir = random(3) - 0.5
@@ -506,10 +513,16 @@ def parSimChain(data):
                 print('Does the number of subsamples exceed the number of segments?')
                 downsampledPath = chain.path
                 
-        Rg[ctr] = computeRg(downsampledPath, dimensions = 3)
+        Rg[ctr]  = computeRg(downsampledPath, dimensions = 3)
+        ecc[ctr] = computeEcc(downsampledPath)
+        
         if locPrecision != 0:
-            bumpedPath = bumpPoints(downsampledPath, locPrecision)
-            RgBump[ctr] = computeRg(bumpedPath, dimensions = 3)
+            bumpedPath   = bumpPoints(downsampledPath, locPrecision)
+            RgBump[ctr]  = computeRg(bumpedPath, dimensions = 3)
+            eccBump[ctr] = computeEcc(bumpedPath)
+        else:
+            RgBump[ctr]  = Rg[ctr]
+            eccBump[ctr] = ecc[ctr]
 
     RgDict = {'Rg' : Rg, 'RgBump' : RgBump}
     return RgDict

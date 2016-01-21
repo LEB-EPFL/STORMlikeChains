@@ -3,7 +3,7 @@
 """
 
 __author__ = 'Kyle M. Douglass'
-__version__ = '0.3'
+__version__ = '0.4'
 __email__ = 'kyle.douglass@epfl.ch'
 
 import numpy as np
@@ -44,6 +44,15 @@ def computeRg(path, dimensions = 3):
         Rg = (np.sum(secondMoments[0:2])) ** (0.5)
 
     return Rg
+    
+def computeEcc(path):
+    """Compute the (2D) eccentricity of a path.
+    
+    computeEcc() calculates the eccentricity of a projection of the path
+    segments onto the x-y plane. The eccentricity is the ratio of the maximum
+    to the minimum eigenvalue of the covariance matrix of the x and y
+    points."""
+    pass
 
 def WLCRg(c, Lp, N):
 
