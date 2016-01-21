@@ -74,7 +74,7 @@ chainSubsamples : int (optional)
 # Create a random numbers for the number of base pairs in each chain.
 numPaths = 1000
 # basePairDist = 24000 * (random(numPaths) - 0.5) + 27000
-basePairDist = 27000 * ones(numPaths)
+basePairDist = 33000 * ones(numPaths)
 
 simArgs = {'numPaths'      : numPaths,
            'pathLength'    : basePairDist,
@@ -84,7 +84,7 @@ simArgs = {'numPaths'      : numPaths,
            'nameDB'        : 'example_single_WLC_DB',
            'locPrecision'  : 15,
            'fullSpecParam' : True,
-           'chainSubsamples' : -1} #150
+           'chainSubsamples' : 150} #150
 
 tic = time.time()
 
@@ -97,7 +97,7 @@ print('Total simulation time: %f' % (toc - tic))
 from STORMlikeChains import STORMlikeChains_helpers
 from numpy import sqrt
 
-theoryRg3D = STORMlikeChains_helpers.WLCRg(40, 50, 27000)
+theoryRg3D = STORMlikeChains_helpers.WLCRg(40, 50, 33000)
 theoryRg2D = theoryRg3D * sqrt(2/3)
 
 print('Theoretical 3DtheoryRg: {0:.4f}'.format(theoryRg3D))

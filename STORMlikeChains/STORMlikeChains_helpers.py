@@ -16,6 +16,11 @@ from scipy import interpolate
 
 np.seterr(divide='raise')
 
+INDEX_RG      = 0
+INDEX_RGBUMP  = 1
+INDEX_ECC     = 2
+INDEX_ECCBUMP = 3
+
 def computeRg(path, dimensions = 3):
     """Compute the radius of gyration of a path.
 
@@ -157,7 +162,7 @@ def loadModel(dbNameList):
 
                 model = myDB.load(paramStr)[0]
 
-                c = float(paramStr[2:firstComma])
+                c  = float(paramStr[2:firstComma])
                 lp = float(paramStr[firstComma + 5:])
 
                 # If the key (c, lp) already exists, data is
@@ -166,7 +171,7 @@ def loadModel(dbNameList):
 
     return simResults
 
-def computeLLH(dbName, dataFName, bump = True, fishBias = 0, altInput = None):
+def computeLLH(dbName, dataFName, bump = True, altInput = None):
     """Computes the log-likelihood of all simulated parameters.
 
     computeLLH computes the log-likelihood for all the simulated
@@ -183,13 +188,6 @@ def computeLLH(dbName, dataFName, bump = True, fishBias = 0, altInput = None):
     bump : boolean (optional)
         Use the bumped or unbumped data in the ML reconstruction?
         (Default is True)
-    fishBias : float
-        The bias factor induced by FISH (or antibody) labeling. This
-        adds a constant offset to the distribution, shifting the
-        simulated distributions to larger sizes. This is primarily
-        used for exploring labeling artifacts, so its use is not
-        recommended unless your sample labeling is well-characterized.
-        (Default is 0)
     altInput : array of float
         If this variable is provided, dataFName is ignored and the
         data is instead taken from this variable. This is primarily
@@ -200,7 +198,10 @@ def computeLLH(dbName, dataFName, bump = True, fishBias = 0, altInput = None):
     if altInput is None:
         data = np.loadtxt(dataFName)
     else:
-        data = altInput
+        # Load Rg and Eccentricity data
+        dataIn = np.loadtxt(dataFName, delimiter = ',')
+        Rg   = dataIn[:,0]
+        ecc  = dataIn[:,1]
 
     # Initialize numpy array for holding parameter-pair and LLH values
     llhLandscape = np.zeros((len(simResults),), dtype=('f4,f4,f4'))
@@ -208,11 +209,13 @@ def computeLLH(dbName, dataFName, bump = True, fishBias = 0, altInput = None):
     for ctr, key in enumerate(simResults):
         # Use bumped data or unbumped data?
         if bump:
-            simRg = simResults[key][1] + fishBias
+            simRg  = simResults[key][INDEX_RGBUMP]
+            simEcc = simResults[key][INDEX_ECCBUMP]
         else:
-            simRg = simResults[key][0] + fishBias
+            simRg  = simResults[key][INDEX_RG]
+            simEcc = simResults[key][INDEX_ECC]
             
-        llh = computeSingleLLH_KDE(simRg, data)
+        llh = computeSingleLLH_KDE(simRg, Rg)
         c, lp = key
 
         # llhLandscape is a structured numpy array.
@@ -243,7 +246,7 @@ def computeSingleLLH_KDE(simData, expData):
 
     """
     # Add an axis so scikit-learn functions can operate on the data
-    Rg = simData[:, np.newaxis]
+    Rg   = simData[:, np.newaxis]
     data = expData[:, np.newaxis]
 
     # The following is used to estimate the bandwidth, but it's very

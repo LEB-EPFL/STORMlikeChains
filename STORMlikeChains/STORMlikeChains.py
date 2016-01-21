@@ -434,6 +434,7 @@ class WLCCollector(Collector):
             eccBump    = currRgData['eccBump']
         
             # Convert back to user-defined units
+            # No need to convert eccentricity back because its dimensionless
             c  = self._convSegments(c, True)
             lp = self._convSegments(lp, False)
             Rg = self._convSegments(Rg, False)
@@ -446,9 +447,9 @@ class WLCCollector(Collector):
             try:
                 # Save the gyration radii histogram to the database
                 identifier = 'c=%s, lp=%s' % (c, lp)
-                myDB.dump((Rg, RgBump), identifier)
+                myDB.dump((Rg, RgBump, ecc, eccBump), identifier)
                 print('Mean of all path Rg\'s: %f' % mean(Rg))
-                print('Median of all path ecc\'s: %f' % median(eccBump))
+                print('Median of all path bumped ecc\'s: %f' % median(eccBump))
             except:
                 print('A problem occurred while saving the data.')
 

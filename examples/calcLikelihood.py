@@ -27,7 +27,6 @@ experimentDatasetName = 'example_Measured_Dist.txt'
 # List of NumPyDB database names without the file suffix.
 dbNames = ['example_WLC_DB']
 
-
 outputFName = 'example_LLH_Data.npy'
 
 # Compute the log-likelihood for each simulated distribution.
@@ -36,7 +35,4 @@ llh = Helpers.computeLLH(dbNames, experimentDatasetName)
 # Save the log-likelihood data to a .npy file.
 with open(outputFName, mode = 'wb') as fileOut:
     save(fileOut, llh)
-
-
-
 
